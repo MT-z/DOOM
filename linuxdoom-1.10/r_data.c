@@ -552,47 +552,16 @@ void R_InitTextures (void)
     printf("R_InitTextures: Total textures = %d\n", numtextures);
     fflush(stdout);
     
-    printf("R_InitTextures: Allocating texture arrays\n");
-    fflush(stdout);
-    textures = Z_Malloc (numtextures*4, PU_STATIC, 0);
-    printf("R_InitTextures: textures allocated at %p\n", (void*)textures);
-    fflush(stdout);
-    
-    printf("R_InitTextures: Allocating texturecolumnlump\n");
-    fflush(stdout);
-    texturecolumnlump = Z_Malloc (numtextures*4, PU_STATIC, 0);
-    printf("R_InitTextures: texturecolumnlump allocated at %p\n", (void*)texturecolumnlump);
-    fflush(stdout);
-    
-    printf("R_InitTextures: Allocating texturecolumnofs\n");
-    fflush(stdout);
-    texturecolumnofs = Z_Malloc (numtextures*4, PU_STATIC, 0);
-    printf("R_InitTextures: texturecolumnofs allocated at %p\n", (void*)texturecolumnofs);
-    fflush(stdout);
-    
-    printf("R_InitTextures: Allocating texturecomposite\n");
-    fflush(stdout);
-    texturecomposite = Z_Malloc (numtextures*4, PU_STATIC, 0);
-    printf("R_InitTextures: texturecomposite allocated at %p\n", (void*)texturecomposite);
-    fflush(stdout);
-    
-    printf("R_InitTextures: Allocating texturecompositesize\n");
-    fflush(stdout);
-    texturecompositesize = Z_Malloc (numtextures*4, PU_STATIC, 0);
-    printf("R_InitTextures: texturecompositesize allocated at %p\n", (void*)texturecompositesize);
-    fflush(stdout);
-    
-    printf("R_InitTextures: Allocating texturewidthmask\n");
-    fflush(stdout);
-    texturewidthmask = Z_Malloc (numtextures*4, PU_STATIC, 0);
-    printf("R_InitTextures: texturewidthmask allocated at %p\n", (void*)texturewidthmask);
-    fflush(stdout);
-    
-    printf("R_InitTextures: Allocating textureheight\n");
-    fflush(stdout);
-    textureheight = Z_Malloc (numtextures*4, PU_STATIC, 0);
-    printf("R_InitTextures: textureheight allocated at %p\n", (void*)textureheight);
-    fflush(stdout);
+    // FIXED: These arrays hold pointers - must use sizeof(pointer),
+    // not 4, on 64-bit systems. The old *4 sizes overflowed the zone
+    // blocks and corrupted adjacent memblock headers.
+    textures = Z_Malloc (numtextures*sizeof(*textures), PU_STATIC, 0);
+    texturecolumnlump = Z_Malloc (numtextures*sizeof(*texturecolumnlump), PU_STATIC, 0);
+    texturecolumnofs = Z_Malloc (numtextures*sizeof(*texturecolumnofs), PU_STATIC, 0);
+    texturecomposite = Z_Malloc (numtextures*sizeof(*texturecomposite), PU_STATIC, 0);
+    texturecompositesize = Z_Malloc (numtextures*sizeof(*texturecompositesize), PU_STATIC, 0);
+    texturewidthmask = Z_Malloc (numtextures*sizeof(*texturewidthmask), PU_STATIC, 0);
+    textureheight = Z_Malloc (numtextures*sizeof(*textureheight), PU_STATIC, 0);
 
     totalwidth = 0;
     
