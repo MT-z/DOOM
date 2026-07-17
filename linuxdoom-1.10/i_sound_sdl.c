@@ -35,6 +35,8 @@ rcsid[] = "$Id: i_sound_sdl.c,v 1.0 2026/07/18 macos port $";
 #include "m_misc.h"
 #include "w_wad.h"
 #include "doomdef.h"
+#include "d_net.h"
+#include "doomstat.h"
 
 // Sound device state
 static SDL_AudioDeviceID audio_device = 0;
@@ -464,7 +466,34 @@ void I_UpdateNETgamestate(void)
 
 void I_InitNetwork(void)
 {
-	// Not implemented - network multiplayer
+	// Stub for single-player only - set up minimal doomcom structure
+	// Network multiplayer is not implemented
+	printf("I_InitNetwork: Initializing single-player network (stub)\n");
+	fflush(stdout);
+	
+	if (!doomcom)
+	{
+		printf("I_InitNetwork: Allocating doomcom structure\n");
+		doomcom = malloc(sizeof(doomcom_t));
+		if (!doomcom)
+		{
+			printf("I_InitNetwork: ERROR - malloc failed!\n");
+			return; // Let main code handle error
+		}
+	}
+	
+	// Set up single-player defaults
+	printf("I_InitNetwork: Setting up single-player defaults\n");
+	memset(doomcom, 0, sizeof(doomcom_t));
+	doomcom->id = DOOMCOM_ID;
+	doomcom->numplayers = 1;
+	doomcom->numnodes = 1;
+	doomcom->deathmatch = 0;
+	doomcom->consoleplayer = 0;
+	doomcom->ticdup = 1;
+	doomcom->extratics = 0;
+	printf("I_InitNetwork: Single-player setup complete\n");
+	fflush(stdout);
 }
 
 void I_NetCmd(void)
