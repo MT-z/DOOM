@@ -308,14 +308,32 @@ void W_InitMultipleFiles (char** filenames)
     if (!numlumps)
 	I_Error ("W_InitFiles: no files found");
     
+    printf("W_InitMultipleFiles: numlumps = %d\n", numlumps);
+    printf("W_InitMultipleFiles: sizeof(*lumpcache) = %zu\n", sizeof(*lumpcache));
+    fflush(stdout);
+    
     // set up caching
     size = numlumps * sizeof(*lumpcache);
+    printf("W_InitMultipleFiles: Allocating lumpcache with size %d (%d * %zu)\n", 
+           size, numlumps, sizeof(*lumpcache));
+    fflush(stdout);
+    
     lumpcache = malloc (size);
+    
+    printf("W_InitMultipleFiles: lumpcache allocated at %p\n", lumpcache);
+    fflush(stdout);
     
     if (!lumpcache)
 	I_Error ("Couldn't allocate lumpcache");
 
     memset (lumpcache,0, size);
+    
+    printf("W_InitMultipleFiles: lumpcache initialization complete\n");
+    printf("  lumpcache[0] is at %p, value=%p\n", &lumpcache[0], lumpcache[0]);
+    printf("  lumpcache[1] is at %p, value=%p\n", &lumpcache[1], lumpcache[1]);
+    printf("  lumpcache[2] is at %p, value=%p\n", &lumpcache[2], lumpcache[2]);
+    printf("  lumpcache[2306] would be at %p (last valid is lumpcache[2305])\n", &lumpcache[2306]);
+    fflush(stdout);
 }
 
 
@@ -505,16 +523,42 @@ W_CacheLumpNum
     if ((unsigned)lump >= numlumps)
 	I_Error ("W_CacheLumpNum: %i >= numlumps",lump);
 		
-    if (!lumpcache[lump])
+    if (lump == 0 || lump == 1)
+	printf("W_CacheLumpNum: lump %d - lumpcache[%d]=%p (before check)\n", 
+	       lump, lump, lumpcache[lump]);
+    
+    // Validate pointer - if it looks obviously corrupted (too many 0xFF bits), treat as NULL
+    int corrupted = 0;
+    if (lumpcache[lump])
+    {
+        unsigned long ptr_val = (unsigned long)lumpcache[lump];
+        // Check for patterns that indicate corruption (e.g., 0xFFFFFFFF pattern)
+        if (ptr_val > 0xFFFFFF00 && ptr_val < 0x100000000)
+        {
+            printf("W_CacheLumpNum: Detected corrupted pointer %p for lump %d, treating as NULL\n",
+                   lumpcache[lump], lump);
+            corrupted = 1;
+        }
+    }
+    
+    if (!lumpcache[lump] || corrupted)
     {
 	// read the lump in
 	
 	//printf ("cache miss on lump %i\n",lump);
+	printf("W_CacheLumpNum: Cache MISS for lump %d, allocating %d bytes\n", 
+	       lump, W_LumpLength(lump));
+	fflush(stdout);
 	ptr = Z_Malloc (W_LumpLength (lump), tag, &lumpcache[lump]);
+	printf("W_CacheLumpNum: After Z_Malloc, lumpcache[%d]=%p\n", lump, lumpcache[lump]);
+	fflush(stdout);
 	W_ReadLump (lump, lumpcache[lump]);
     }
     else
     {
+	printf("W_CacheLumpNum: Cache HIT for lump %d, lumpcache[%d]=%p\n",
+	       lump, lump, lumpcache[lump]);
+	fflush(stdout);
 	//printf ("cache hit on lump %i\n",lump);
 	Z_ChangeTag (lumpcache[lump],tag);
     }

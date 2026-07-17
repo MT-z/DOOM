@@ -271,10 +271,16 @@ Z_Malloc
     {
 	// mark as an in use block
 	base->user = user;
+	void *allocated_ptr = (void *) ((byte *)base + sizeof(memblock_t));
 	printf("Z_Malloc: Allocating %d bytes, writing ptr %p to user=%p\n", 
-	       size, (void *) ((byte *)base + sizeof(memblock_t)), user);
+	       size, allocated_ptr, user);
+	if (user && *(void**)user == NULL)  // Check if this is the first write
+	{
+	    printf("  (Writing to previously NULL pointer)\n");
+	}
+	*(void **)user = allocated_ptr;
+	printf("  (After write, verify: *(void**)%p = %p)\n", user, *(void**)user);
 	fflush(stdout);
-	*(void **)user = (void *) ((byte *)base + sizeof(memblock_t));
     }
     else
     {

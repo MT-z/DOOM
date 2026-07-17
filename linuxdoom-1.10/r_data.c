@@ -754,6 +754,12 @@ void R_InitSpriteLumps (void)
     firstspritelump = W_GetNumForName ("S_START") + 1;
     lastspritelump = W_GetNumForName ("S_END") - 1;
     
+    printf("R_InitSpriteLumps: S_START = %d, S_END = %d\n", 
+           firstspritelump - 1, lastspritelump + 1);
+    printf("R_InitSpriteLumps: firstspritelump = %d, lastspritelump = %d\n",
+           firstspritelump, lastspritelump);
+    fflush(stdout);
+    
     numspritelumps = lastspritelump - firstspritelump + 1;
     spritewidth = Z_Malloc (numspritelumps*4, PU_STATIC, 0);
     spriteoffset = Z_Malloc (numspritelumps*4, PU_STATIC, 0);
@@ -761,10 +767,17 @@ void R_InitSpriteLumps (void)
 	
     for (i=0 ; i< numspritelumps ; i++)
     {
+	int lump_to_load = firstspritelump + i;
+	if ((i%100) == 0)
+	    printf("\nR_InitSpriteLumps loop: i=%d, lump=%d\n", i, lump_to_load);
+	
 	if (!(i&63))
+	{
 	    printf (".");
+	    fflush(stdout);
+	}
 
-	patch = W_CacheLumpNum (firstspritelump+i, PU_CACHE);
+	patch = W_CacheLumpNum (lump_to_load, PU_CACHE);
 	spritewidth[i] = SHORT(patch->width)<<FRACBITS;
 	spriteoffset[i] = SHORT(patch->leftoffset)<<FRACBITS;
 	spritetopoffset[i] = SHORT(patch->topoffset)<<FRACBITS;
