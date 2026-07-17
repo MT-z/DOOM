@@ -81,33 +81,21 @@ typedef struct
 // Texture definition (WAD file format).
 // A DOOM wall texture is a list of patches
 // which are to be combined in a predefined order.
-// NOTE: This matches the actual WAD file format - no pointers!
+// NOTE: This must match the on-disk WAD layout exactly.
+// The obsolete columndirectory field occupies 4 bytes on disk,
+// so it is kept as a 4-byte int placeholder (NOT a pointer,
+// which would be 8 bytes on 64-bit and shift patchcount).
 //
 typedef struct
 {
     char		name[8];
-    boolean		masked;	
+    int			masked;	
     short		width;
     short		height;
+    int			columndirectory;	// OBSOLETE - 4-byte placeholder
     short		patchcount;
     mappatch_t	patches[1];
 } maptexture_t;
-
-//
-// Texture definition (in-memory format).
-// This is the runtime version with additional fields
-// not present in the WAD file.
-//
-typedef struct
-{
-    char		name[8];
-    boolean		masked;	
-    short		width;
-    short		height;
-    void		**columndirectory;	// OBSOLETE - only in memory
-    short		patchcount;
-    mappatch_t	patches[1];
-} maptexture_mem_t;
 
 
 // A single patch from a texture definition,

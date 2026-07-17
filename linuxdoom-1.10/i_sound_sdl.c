@@ -134,11 +134,13 @@ void I_InitSound(void)
 	}
 
 	// Initialize volume lookup table
+	// Original DOOM formula: signed output scaled to 16-bit range.
+	// Index j is the raw unsigned 8-bit sample (centered at 128).
 	for (i = 0; i < 128; i++)
 	{
 		int j;
 		for (j = 0; j < 256; j++)
-			vol_lookup[i * 256 + j] = (i * j) >> 8;
+			vol_lookup[i * 256 + j] = (i * (j - 128) * 256) / 127;
 	}
 
 	// Start audio playback
@@ -282,6 +284,12 @@ int I_StartSound(int id, int vol, int sep, int pitch, int priority)
 	if (!sfx->data)
 		return -1;  // Failed to load
 
+	// Clamp volumes to lookup table range (0-127)
+	if (leftvol < 0) leftvol = 0;
+	if (leftvol > 127) leftvol = 127;
+	if (rightvol < 0) rightvol = 0;
+	if (rightvol > 127) rightvol = 127;
+
 	// Calculate sound length from lump size
 	int soundlength = W_LumpLength(sfx->lumpnum);
 	if (soundlength > 8)
@@ -362,8 +370,9 @@ void I_UpdateSound(void)
 				break;
 			}
 
-			// Get sample and step
-			sample = (signed char)*ch->data;
+			// Get raw unsigned 8-bit sample (centered at 128);
+			// vol_lookup handles the center offset
+			sample = *ch->data;
 			ch->stepremainder += ch->step;
 
 			if (ch->stepremainder & 0xffff0000)
@@ -372,21 +381,26 @@ void I_UpdateSound(void)
 				ch->stepremainder &= 0xffff;
 			}
 
-			// Volume lookup
-			left = vol_lookup[ch->left_volume * 256 + ((sample + 128) & 0xff)];
-			right = vol_lookup[ch->right_volume * 256 + ((sample + 128) & 0xff)];
+			// Volume lookup (signed 16-bit output)
+			left = ptr[0] + vol_lookup[ch->left_volume * 256 + sample];
+			right = ptr[1] + vol_lookup[ch->right_volume * 256 + sample];
 
-			// Mix to buffer (stereo interleaved)
-			ptr[0] += left;
-			ptr[1] += right;
+			// Mix to buffer with saturation (stereo interleaved)
+			if (left > 0x7fff) left = 0x7fff;
+			else if (left < -0x8000) left = -0x8000;
+			if (right > 0x7fff) right = 0x7fff;
+			else if (right < -0x8000) right = -0x8000;
+			ptr[0] = left;
+			ptr[1] = right;
 			ptr += 2;
 		}
 	}
 
-	// Queue the mixed audio
-	if (SDL_GetQueuedAudioSize(audio_device) == 0)
+	// Queue the mixed audio; keep a couple of buffers queued
+	// to avoid gaps without building up latency
+	if (SDL_GetQueuedAudioSize(audio_device) < SAMPLECOUNT * 2 * sizeof(signed short) * 2)
 	{
-		SDL_QueueAudio(audio_device, mixbuffer, MIXBUFFERSIZE * sizeof(signed short));
+		SDL_QueueAudio(audio_device, mixbuffer, SAMPLECOUNT * 2 * sizeof(signed short));
 	}
 }
 
