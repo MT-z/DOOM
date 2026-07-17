@@ -1,5 +1,6 @@
 # Build artifacts
 macos/
+tmp/
 linux/
 *.o
 *.a

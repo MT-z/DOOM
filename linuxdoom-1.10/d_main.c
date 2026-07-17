@@ -363,8 +363,6 @@ void D_DoomLoop (void)
 	printf ("debug output to: %s\n",filename);
 	debugfile = fopen (filename,"w");
     }
-	
-    I_InitGraphics ();
 
     while (1)
     {
@@ -1090,6 +1088,9 @@ void D_DoomMain (void)
 
     printf ("M_Init: Init miscellaneous info.\n");
     M_Init ();
+
+    printf ("I_InitGraphics: Init video system with SDL2.\n");
+    I_InitGraphics ();
 
     printf ("R_Init: Init DOOM refresh daemon - ");
     R_Init ();

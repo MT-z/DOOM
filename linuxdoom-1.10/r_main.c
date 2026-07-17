@@ -772,25 +772,58 @@ extern int	screenblocks;
 
 void R_Init (void)
 {
+    printf("R_Init: Starting R_InitData\n");
+    fflush(stdout);
     R_InitData ();
-    printf ("\nR_InitData");
+    printf ("\nR_InitData - OK");
+    fflush(stdout);
+    
+    printf ("\nR_InitPointToAngle - starting");
+    fflush(stdout);
     R_InitPointToAngle ();
-    printf ("\nR_InitPointToAngle");
+    printf ("\nR_InitPointToAngle - OK");
+    fflush(stdout);
+    
+    printf ("\nR_InitTables - starting");
+    fflush(stdout);
     R_InitTables ();
+    printf ("\nR_InitTables - OK");
+    fflush(stdout);
     // viewwidth / viewheight / detailLevel are set by the defaults
-    printf ("\nR_InitTables");
 
+    printf ("\nR_SetViewSize - starting");
+    fflush(stdout);
     R_SetViewSize (screenblocks, detailLevel);
+    printf ("\nR_SetViewSize - OK");
+    fflush(stdout);
+    
+    printf ("\nR_InitPlanes - starting");
+    fflush(stdout);
     R_InitPlanes ();
-    printf ("\nR_InitPlanes");
+    printf ("\nR_InitPlanes - OK");
+    fflush(stdout);
+    
+    printf ("\nR_InitLightTables - starting");
+    fflush(stdout);
     R_InitLightTables ();
-    printf ("\nR_InitLightTables");
+    printf ("\nR_InitLightTables - OK");
+    fflush(stdout);
+    
+    printf ("\nR_InitSkyMap - starting");
+    fflush(stdout);
     R_InitSkyMap ();
-    printf ("\nR_InitSkyMap");
+    printf ("\nR_InitSkyMap - OK");
+    fflush(stdout);
+    
+    printf ("\nR_InitTranslationTables - starting");
+    fflush(stdout);
     R_InitTranslationTables ();
-    printf ("\nR_InitTranslationsTables");
+    printf ("\nR_InitTranslationTables - OK");
+    fflush(stdout);
 	
     framecount = 0;
+    printf("\nR_Init: Complete\n");
+    fflush(stdout);
 }
 
 

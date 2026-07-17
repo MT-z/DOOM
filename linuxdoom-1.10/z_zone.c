@@ -217,6 +217,9 @@ Z_Malloc
 	if (rover == start)
 	{
 	    // scanned all the way around the list
+	    printf("Z_Malloc: FAILED - no free block big enough for %d bytes\n", size);
+	    printf("Z_Malloc: user=%p, tag=%d\n", user, tag);
+	    fflush(stdout);
 	    I_Error ("Z_Malloc: failed on allocation of %i bytes", size);
 	}
 	
@@ -267,7 +270,10 @@ Z_Malloc
     if (user)
     {
 	// mark as an in use block
-	base->user = user;			
+	base->user = user;
+	printf("Z_Malloc: Allocating %d bytes, writing ptr %p to user=%p\n", 
+	       size, (void *) ((byte *)base + sizeof(memblock_t)), user);
+	fflush(stdout);
 	*(void **)user = (void *) ((byte *)base + sizeof(memblock_t));
     }
     else

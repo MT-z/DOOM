@@ -232,9 +232,16 @@ void I_InitGraphics(void)
 	char* displayenv;
 	int windowflags;
 
+	printf("I_InitGraphics: Starting SDL2 initialization\n");
+	fflush(stdout);
+
 	// Initialize SDL2
 	if (SDL_Init(SDL_INIT_VIDEO) < 0)
+	{
+		printf("I_InitGraphics: SDL_Init failed: %s\n", SDL_GetError());
+		fflush(stdout);
 		I_Error("SDL_Init failed: %s", SDL_GetError());
+	}
 
 	windowflags = 0;
 

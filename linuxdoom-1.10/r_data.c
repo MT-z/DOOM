@@ -77,9 +77,10 @@ typedef struct
 
 
 //
-// Texture definition.
+// Texture definition (WAD file format).
 // A DOOM wall texture is a list of patches
 // which are to be combined in a predefined order.
+// NOTE: This matches the actual WAD file format - no pointers!
 //
 typedef struct
 {
@@ -87,10 +88,25 @@ typedef struct
     boolean		masked;	
     short		width;
     short		height;
-    void		**columndirectory;	// OBSOLETE
     short		patchcount;
     mappatch_t	patches[1];
 } maptexture_t;
+
+//
+// Texture definition (in-memory format).
+// This is the runtime version with additional fields
+// not present in the WAD file.
+//
+typedef struct
+{
+    char		name[8];
+    boolean		masked;	
+    short		width;
+    short		height;
+    void		**columndirectory;	// OBSOLETE - only in memory
+    short		patchcount;
+    mappatch_t	patches[1];
+} maptexture_mem_t;
 
 
 // A single patch from a texture definition,
@@ -444,55 +460,161 @@ void R_InitTextures (void)
 
     
     // Load the patch names from pnames.lmp.
-    name[8] = 0;	
+    name[8] = 0;
+    printf("R_InitTextures: Loading PNAMES\n");
+    fflush(stdout);
     names = W_CacheLumpName ("PNAMES", PU_STATIC);
-    nummappatches = LONG ( *((int *)names) );
-    name_p = names+4;
-    patchlookup = alloca (nummappatches*sizeof(*patchlookup));
+    printf("R_InitTextures: PNAMES loaded at %p\n", (void*)names);
+    fflush(stdout);
     
+    if (!names)
+    {
+        printf("R_InitTextures: ERROR - PNAMES is NULL!\n");
+        fflush(stdout);
+        I_Error("R_InitTextures: Failed to load PNAMES");
+    }
+    
+    nummappatches = LONG ( *((int *)names) );
+    printf("R_InitTextures: nummappatches = %d\n", nummappatches);
+    fflush(stdout);
+    name_p = names+4;
+    printf("R_InitTextures: Allocating %d patches on HEAP (not stack)\n", nummappatches);
+    fflush(stdout);
+    // Use Z_Malloc instead of alloca to avoid stack overflow with 351 patches
+    patchlookup = Z_Malloc(nummappatches*sizeof(*patchlookup), PU_STATIC, 0);
+    printf("R_InitTextures: patchlookup allocated at %p\n", (void*)patchlookup);
+    fflush(stdout);
+    
+    printf("R_InitTextures: Starting patch lookup loop\n");
+    fflush(stdout);
     for (i=0 ; i<nummappatches ; i++)
     {
 	strncpy (name,name_p+i*8, 8);
 	patchlookup[i] = W_CheckNumForName (name);
+	if (i < 5)  // Print first few for debug
+	{
+	    printf("  Patch %d: '%s' -> %d\n", i, name, patchlookup[i]);
+	    fflush(stdout);
+	}
     }
+    printf("R_InitTextures: Patch lookup complete, freeing PNAMES\n");
+    fflush(stdout);
     Z_Free (names);
+    printf("R_InitTextures: PNAMES freed, loading TEXTURE1\n");
+    fflush(stdout);
     
     // Load the map texture definitions from textures.lmp.
     // The data is contained in one or two lumps,
     //  TEXTURE1 for shareware, plus TEXTURE2 for commercial.
+    printf("R_InitTextures: Getting TEXTURE1 lump\n");
+    fflush(stdout);
     maptex = maptex1 = W_CacheLumpName ("TEXTURE1", PU_STATIC);
+    printf("R_InitTextures: TEXTURE1 loaded at %p\n", (void*)maptex);
+    fflush(stdout);
+    
     numtextures1 = LONG(*maptex);
+    printf("R_InitTextures: numtextures1 = %d\n", numtextures1);
+    fflush(stdout);
+    
     maxoff = W_LumpLength (W_GetNumForName ("TEXTURE1"));
+    printf("R_InitTextures: TEXTURE1 length = %d\n", maxoff);
+    fflush(stdout);
+    
     directory = maptex+1;
-	
+    
+    printf("R_InitTextures: Checking for TEXTURE2\n");
+    fflush(stdout);
     if (W_CheckNumForName ("TEXTURE2") != -1)
     {
+    printf("R_InitTextures: TEXTURE2 found, loading\n");
+    fflush(stdout);
 	maptex2 = W_CacheLumpName ("TEXTURE2", PU_STATIC);
+	printf("R_InitTextures: TEXTURE2 loaded at %p\n", (void*)maptex2);
+	fflush(stdout);
 	numtextures2 = LONG(*maptex2);
+	printf("R_InitTextures: numtextures2 = %d\n", numtextures2);
+	fflush(stdout);
 	maxoff2 = W_LumpLength (W_GetNumForName ("TEXTURE2"));
+	printf("R_InitTextures: TEXTURE2 length = %d\n", maxoff2);
+	fflush(stdout);
     }
     else
     {
+    printf("R_InitTextures: TEXTURE2 not found (shareware version)\n");
+    fflush(stdout);
 	maptex2 = NULL;
 	numtextures2 = 0;
 	maxoff2 = 0;
     }
+    
     numtextures = numtextures1 + numtextures2;
-	
+    printf("R_InitTextures: Total textures = %d\n", numtextures);
+    fflush(stdout);
+    
+    printf("R_InitTextures: Allocating texture arrays\n");
+    fflush(stdout);
     textures = Z_Malloc (numtextures*4, PU_STATIC, 0);
+    printf("R_InitTextures: textures allocated at %p\n", (void*)textures);
+    fflush(stdout);
+    
+    printf("R_InitTextures: Allocating texturecolumnlump\n");
+    fflush(stdout);
     texturecolumnlump = Z_Malloc (numtextures*4, PU_STATIC, 0);
+    printf("R_InitTextures: texturecolumnlump allocated at %p\n", (void*)texturecolumnlump);
+    fflush(stdout);
+    
+    printf("R_InitTextures: Allocating texturecolumnofs\n");
+    fflush(stdout);
     texturecolumnofs = Z_Malloc (numtextures*4, PU_STATIC, 0);
+    printf("R_InitTextures: texturecolumnofs allocated at %p\n", (void*)texturecolumnofs);
+    fflush(stdout);
+    
+    printf("R_InitTextures: Allocating texturecomposite\n");
+    fflush(stdout);
     texturecomposite = Z_Malloc (numtextures*4, PU_STATIC, 0);
+    printf("R_InitTextures: texturecomposite allocated at %p\n", (void*)texturecomposite);
+    fflush(stdout);
+    
+    printf("R_InitTextures: Allocating texturecompositesize\n");
+    fflush(stdout);
     texturecompositesize = Z_Malloc (numtextures*4, PU_STATIC, 0);
+    printf("R_InitTextures: texturecompositesize allocated at %p\n", (void*)texturecompositesize);
+    fflush(stdout);
+    
+    printf("R_InitTextures: Allocating texturewidthmask\n");
+    fflush(stdout);
     texturewidthmask = Z_Malloc (numtextures*4, PU_STATIC, 0);
+    printf("R_InitTextures: texturewidthmask allocated at %p\n", (void*)texturewidthmask);
+    fflush(stdout);
+    
+    printf("R_InitTextures: Allocating textureheight\n");
+    fflush(stdout);
     textureheight = Z_Malloc (numtextures*4, PU_STATIC, 0);
+    printf("R_InitTextures: textureheight allocated at %p\n", (void*)textureheight);
+    fflush(stdout);
 
     totalwidth = 0;
     
+    printf("R_InitTextures: Starting texture processing\n");
+    fflush(stdout);
+    
     //	Really complex printing shit...
+    printf("R_InitTextures: Getting S_START\n");
+    fflush(stdout);
     temp1 = W_GetNumForName ("S_START");  // P_???????
+    printf("R_InitTextures: S_START = %d\n", temp1);
+    fflush(stdout);
+    
+    printf("R_InitTextures: Getting S_END\n");
+    fflush(stdout);
     temp2 = W_GetNumForName ("S_END") - 1;
+    printf("R_InitTextures: S_END = %d\n", temp2);
+    fflush(stdout);
+    
     temp3 = ((temp2-temp1+63)/64) + ((numtextures+63)/64);
+    printf("R_InitTextures: temp3 = %d\n", temp3);
+    fflush(stdout);
+    
     printf("[");
     for (i = 0; i < temp3; i++)
 	printf(" ");
@@ -504,7 +626,10 @@ void R_InitTextures (void)
     for (i=0 ; i<numtextures ; i++, directory++)
     {
 	if (!(i&63))
+	{
 	    printf (".");
+	    fflush(stdout);
+	}
 
 	if (i == numtextures1)
 	{
@@ -536,11 +661,28 @@ void R_InitTextures (void)
 
 	for (j=0 ; j<texture->patchcount ; j++, mpatch++, patch++)
 	{
+	    int patch_index = SHORT(mpatch->patch);
+	    if (patch_index < 0 || patch_index >= nummappatches)
+	    {
+		printf("ERROR: Texture %d patch %d: invalid patch index %d (max %d)\n",
+		       i, j, patch_index, nummappatches-1);
+		printf("  Raw bytes: %02x %02x (patchcount=%d)\n",
+		       ((byte*)mpatch)[0], ((byte*)mpatch)[1], texture->patchcount);
+		printf("  mtexture->patchcount raw = %d\n", mtexture->patchcount);
+		fflush(stdout);
+		// Instead of error, skip this patch
+		printf("  Skipping invalid patch...\n");
+		fflush(stdout);
+		continue;
+	    }
+	    
 	    patch->originx = SHORT(mpatch->originx);
 	    patch->originy = SHORT(mpatch->originy);
-	    patch->patch = patchlookup[SHORT(mpatch->patch)];
+	    patch->patch = patchlookup[patch_index];
 	    if (patch->patch == -1)
 	    {
+		printf("ERROR: Texture %d patch %d missing\n", i, j);
+		fflush(stdout);
 		I_Error ("R_InitTextures: Missing patch in texture %s",
 			 texture->name);
 	    }
@@ -557,6 +699,10 @@ void R_InitTextures (void)
 		
 	totalwidth += texture->width;
     }
+    
+    printf("R_InitTextures: Texture loop complete, freeing patchlookup\n");
+    fflush(stdout);
+    Z_Free (patchlookup);
 
     Z_Free (maptex1);
     if (maptex2)

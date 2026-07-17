@@ -34,6 +34,7 @@ rcsid[] = "$Id: w_wad.c,v 1.5 1997/02/03 16:47:57 b1 Exp $";
 #include <stdlib.h>  // malloc, calloc, free
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <errno.h>
 #if defined(LINUX) || defined(__APPLE__) || defined(__unix__)
 #include <alloca.h>
 #endif
@@ -438,6 +439,7 @@ W_ReadLump
     int		c;
     lumpinfo_t*	l;
     int		handle;
+    off_t	seek_result;
 	
     if (lump >= numlumps)
 	I_Error ("W_ReadLump: %i >= numlumps",lump);
@@ -454,13 +456,32 @@ W_ReadLump
     }
     else
 	handle = l->handle;
+    
+    printf("W_ReadLump: lump %d - handle=%d, dest=%p, size=%ld, pos=%ld\n",
+           lump, handle, dest, l->size, l->position);
+    fflush(stdout);
 		
-    lseek (handle, l->position, SEEK_SET);
+    seek_result = lseek (handle, l->position, SEEK_SET);
+    if (seek_result == -1)
+    {
+	printf("W_ReadLump DEBUG: lseek failed (errno %d)\n", errno);
+	fflush(stdout);
+	I_Error("W_ReadLump: lseek failed on lump %i",lump);
+    }
+    
+    printf("W_ReadLump: After lseek, about to read...\n");
+    fflush(stdout);
+    
     c = read (handle, dest, l->size);
 
+    printf("W_ReadLump: read returned %d (errno %d)\n", c, errno);
+    fflush(stdout);
+
     if (c < l->size)
+    {
 	I_Error ("W_ReadLump: only read %i of %i on lump %i",
-		 c,l->size,lump);	
+		 c,l->size,lump);
+    }
 
     if (l->handle == -1)
 	close (handle);
