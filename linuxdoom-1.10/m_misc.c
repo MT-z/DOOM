@@ -237,7 +237,6 @@ default_t	defaults[] =
     {"sfx_volume",&snd_SfxVolume, 8},
     {"music_volume",&snd_MusicVolume, 8},
     {"show_messages",&showMessages, 1},
-    
 
 #ifdef NORMALUNIX
     {"key_right",&key_right, KEY_RIGHTARROW},
@@ -253,11 +252,11 @@ default_t	defaults[] =
     {"key_speed",&key_speed, KEY_RSHIFT},
 
 // UNIX hack, to be removed. 
-#ifdef SNDSERV
-    {"sndserver", (int *) &sndserver_filename, (int) "sndserver"},
-    {"mb_used", &mb_used, 2},
+// NOTE: SNDSERV support removed for macOS SDL2 port
+#ifdef SNDSERV_DISABLED
+    // {"sndserver", (int *) &sndserver_filename, (int) "sndserver"},
+    // {"mb_used", &mb_used, 2},
 #endif
-    
 #endif
 
 #ifdef LINUX
@@ -285,18 +284,11 @@ default_t	defaults[] =
 
     {"usegamma",&usegamma, 0},
 
-    {"chatmacro0", (int *) &chat_macros[0], (int) HUSTR_CHATMACRO0 },
-    {"chatmacro1", (int *) &chat_macros[1], (int) HUSTR_CHATMACRO1 },
-    {"chatmacro2", (int *) &chat_macros[2], (int) HUSTR_CHATMACRO2 },
-    {"chatmacro3", (int *) &chat_macros[3], (int) HUSTR_CHATMACRO3 },
-    {"chatmacro4", (int *) &chat_macros[4], (int) HUSTR_CHATMACRO4 },
-    {"chatmacro5", (int *) &chat_macros[5], (int) HUSTR_CHATMACRO5 },
-    {"chatmacro6", (int *) &chat_macros[6], (int) HUSTR_CHATMACRO6 },
-    {"chatmacro7", (int *) &chat_macros[7], (int) HUSTR_CHATMACRO7 },
-    {"chatmacro8", (int *) &chat_macros[8], (int) HUSTR_CHATMACRO8 },
-    {"chatmacro9", (int *) &chat_macros[9], (int) HUSTR_CHATMACRO9 }
-
+    // Chat macros disabled for macOS/modern compiler compatibility
+    // These should be initialized at runtime instead of compile time
+    // when needed by the game
 };
+
 
 int	numdefaults;
 char*	defaultfile;

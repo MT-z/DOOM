@@ -31,10 +31,12 @@ rcsid[] = "$Id: w_wad.c,v 1.5 1997/02/03 16:47:57 b1 Exp $";
 #include <sys/types.h>
 #include <string.h>
 #include <unistd.h>
-#include <malloc.h>
+#include <stdlib.h>  // malloc, calloc, free
 #include <fcntl.h>
 #include <sys/stat.h>
+#if defined(LINUX) || defined(__APPLE__) || defined(__unix__)
 #include <alloca.h>
+#endif
 #define O_BINARY		0
 #endif
 

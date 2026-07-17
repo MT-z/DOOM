@@ -23,7 +23,14 @@
 #ifndef __M_BBOX__
 #define __M_BBOX__
 
+// values.h is not available on modern macOS; use limits.h instead
+#ifdef __APPLE__
+#include <limits.h>
+#define MAXINT INT_MAX
+#define MININT INT_MIN
+#else
 #include <values.h>
+#endif
 
 #include "m_fixed.h"
 

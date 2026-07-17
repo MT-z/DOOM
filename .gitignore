@@ -1,0 +1,18 @@
+# Build artifacts
+macos/
+linux/
+*.o
+*.a
+*.so
+*.dylib
+
+# Editor temporary files
+*~
+*.swp
+*.swo
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+*.code-workspace
