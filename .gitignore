@@ -17,3 +17,7 @@ linux/
 .vscode/
 .idea/
 *.code-workspace
+
+# Game data (commercial assets - NEVER commit)
+*.wad
+*.WAD
