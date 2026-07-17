@@ -43,6 +43,7 @@ rcsid[] = "$Id: r_data.c,v 1.4 1997/02/03 16:47:55 b1 Exp $";
 
 #if defined(LINUX) || defined(__APPLE__) || defined(__unix__)
 #include <alloca.h>
+#include <stdint.h>
 #endif
 
 
@@ -754,12 +755,6 @@ void R_InitSpriteLumps (void)
     firstspritelump = W_GetNumForName ("S_START") + 1;
     lastspritelump = W_GetNumForName ("S_END") - 1;
     
-    printf("R_InitSpriteLumps: S_START = %d, S_END = %d\n", 
-           firstspritelump - 1, lastspritelump + 1);
-    printf("R_InitSpriteLumps: firstspritelump = %d, lastspritelump = %d\n",
-           firstspritelump, lastspritelump);
-    fflush(stdout);
-    
     numspritelumps = lastspritelump - firstspritelump + 1;
     spritewidth = Z_Malloc (numspritelumps*4, PU_STATIC, 0);
     spriteoffset = Z_Malloc (numspritelumps*4, PU_STATIC, 0);
@@ -767,17 +762,10 @@ void R_InitSpriteLumps (void)
 	
     for (i=0 ; i< numspritelumps ; i++)
     {
-	int lump_to_load = firstspritelump + i;
-	if ((i%100) == 0)
-	    printf("\nR_InitSpriteLumps loop: i=%d, lump=%d\n", i, lump_to_load);
-	
 	if (!(i&63))
-	{
 	    printf (".");
-	    fflush(stdout);
-	}
 
-	patch = W_CacheLumpNum (lump_to_load, PU_CACHE);
+	patch = W_CacheLumpNum (firstspritelump+i, PU_CACHE);
 	spritewidth[i] = SHORT(patch->width)<<FRACBITS;
 	spriteoffset[i] = SHORT(patch->leftoffset)<<FRACBITS;
 	spritetopoffset[i] = SHORT(patch->topoffset)<<FRACBITS;
@@ -792,14 +780,17 @@ void R_InitSpriteLumps (void)
 void R_InitColormaps (void)
 {
     int	lump, length;
+    uintptr_t aligned_addr;
     
     // Load in the light tables, 
     //  256 byte align tables.
     lump = W_GetNumForName("COLORMAP"); 
     length = W_LumpLength (lump) + 255; 
-    colormaps = Z_Malloc (length, PU_STATIC, 0); 
-    colormaps = (byte *)( ((int)colormaps + 255)&~0xff); 
-    W_ReadLump (lump,colormaps); 
+    colormaps = Z_Malloc (length, PU_STATIC, 0);
+    // FIXED: Use uintptr_t instead of int for 64-bit pointer arithmetic
+    aligned_addr = ((uintptr_t)colormaps + 255) & ~0xff;
+    colormaps = (byte *)aligned_addr;
+    W_ReadLump (lump, colormaps); 
 }
 
 

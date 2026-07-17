@@ -474,26 +474,12 @@ W_ReadLump
     }
     else
 	handle = l->handle;
-    
-    printf("W_ReadLump: lump %d - handle=%d, dest=%p, size=%ld, pos=%ld\n",
-           lump, handle, dest, l->size, l->position);
-    fflush(stdout);
 		
     seek_result = lseek (handle, l->position, SEEK_SET);
     if (seek_result == -1)
-    {
-	printf("W_ReadLump DEBUG: lseek failed (errno %d)\n", errno);
-	fflush(stdout);
 	I_Error("W_ReadLump: lseek failed on lump %i",lump);
-    }
-    
-    printf("W_ReadLump: After lseek, about to read...\n");
-    fflush(stdout);
     
     c = read (handle, dest, l->size);
-
-    printf("W_ReadLump: read returned %d (errno %d)\n", c, errno);
-    fflush(stdout);
 
     if (c < l->size)
     {
@@ -523,45 +509,14 @@ W_CacheLumpNum
     if ((unsigned)lump >= numlumps)
 	I_Error ("W_CacheLumpNum: %i >= numlumps",lump);
 		
-    if (lump == 0 || lump == 1)
-	printf("W_CacheLumpNum: lump %d - lumpcache[%d]=%p (before check)\n", 
-	       lump, lump, lumpcache[lump]);
-    
-    // Validate pointer - if it looks obviously corrupted (too many 0xFF bits), treat as NULL
-    int corrupted = 0;
-    if (lumpcache[lump])
-    {
-        unsigned long ptr_val = (unsigned long)lumpcache[lump];
-        // Check for patterns that indicate corruption (e.g., 0xFFFFFFFF pattern)
-        if (ptr_val > 0xFFFFFF00 && ptr_val < 0x100000000)
-        {
-            printf("W_CacheLumpNum: Detected corrupted pointer %p for lump %d, treating as NULL\n",
-                   lumpcache[lump], lump);
-            corrupted = 1;
-        }
-    }
-    
-    if (!lumpcache[lump] || corrupted)
+    if (!lumpcache[lump])
     {
 	// read the lump in
-	
-	//printf ("cache miss on lump %i\n",lump);
-	printf("W_CacheLumpNum: Cache MISS for lump %d, allocating %d bytes\n", 
-	       lump, W_LumpLength(lump));
-	fflush(stdout);
 	ptr = Z_Malloc (W_LumpLength (lump), tag, &lumpcache[lump]);
-	printf("W_CacheLumpNum: After Z_Malloc, lumpcache[%d]=%p\n", lump, lumpcache[lump]);
-	fflush(stdout);
 	W_ReadLump (lump, lumpcache[lump]);
     }
     else
-    {
-	printf("W_CacheLumpNum: Cache HIT for lump %d, lumpcache[%d]=%p\n",
-	       lump, lump, lumpcache[lump]);
-	fflush(stdout);
-	//printf ("cache hit on lump %i\n",lump);
 	Z_ChangeTag (lumpcache[lump],tag);
-    }
 	
     return lumpcache[lump];
 }
