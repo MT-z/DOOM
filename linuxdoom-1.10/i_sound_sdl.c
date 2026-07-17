@@ -77,6 +77,10 @@ static int vol_lookup[128 * 256];
 // Mixing buffer
 static signed short mixbuffer[MIXBUFFERSIZE];
 
+// Forward declarations
+static void I_LoadSfxLump(sfxinfo_t* sfx);
+int I_GetSfxLumpNum(sfxinfo_t *sfxinfo);
+
 // Master volume (0-15)
 // Note: snd_SfxVolume and snd_MusicVolume are declared in doomstat.h
 
@@ -143,6 +147,26 @@ void I_InitSound(void)
 			vol_lookup[i * 256 + j] = (i * (j - 128) * 256) / 127;
 	}
 
+	// Pre-cache all sound effects, as s_sound.c expects
+	// (it warns "16bit and not pre-cached - wtf?" otherwise).
+	for (i = 1; i < NUMSFX; i++)
+	{
+		if (!S_sfx[i].link)
+		{
+			S_sfx[i].lumpnum = I_GetSfxLumpNum(&S_sfx[i]);
+			I_LoadSfxLump(&S_sfx[i]);
+		}
+	}
+	// Second pass: linked sounds share the linked-to data
+	for (i = 1; i < NUMSFX; i++)
+	{
+		if (S_sfx[i].link)
+		{
+			S_sfx[i].data = S_sfx[i].link->data;
+			S_sfx[i].lumpnum = S_sfx[i].link->lumpnum;
+		}
+	}
+
 	// Start audio playback
 	SDL_PauseAudioDevice(audio_device, 0);
 }
@@ -203,7 +227,9 @@ static void I_LoadSfxLump(sfxinfo_t* sfx)
 	int paddedsize;
 	int i;
 
-	if (sfx->lumpnum <= 0)
+	// Lump -1 means the sound is absent from this WAD
+	// (e.g. DOOM II sounds when running DOOM 1)
+	if (sfx->lumpnum < 0)
 		return;
 
 	// Get the sound data from the WAD
@@ -517,8 +543,22 @@ void I_NetCmd(void)
 
 int I_GetSfxLumpNum(sfxinfo_t *sfxinfo)
 {
-	// Return the lump number for a sound effect
-	return (sfxinfo ? sfxinfo->lumpnum : -1);
+	// Resolve the WAD lump for a sound effect.
+	// Linked sounds (e.g. chaingun -> pistol) share the
+	// linked-to sound's lump.
+	char namebuf[9];
+
+	if (!sfxinfo)
+		return -1;
+
+	if (sfxinfo->link)
+		sfxinfo = sfxinfo->link;
+
+	sprintf(namebuf, "ds%s", sfxinfo->name);
+
+	// Use CheckNumForName: some sounds (DOOM II only) are
+	// absent from DOOM 1 WADs and must not be fatal.
+	return W_CheckNumForName(namebuf);
 }
 
 void I_FinishUpdate(void)
