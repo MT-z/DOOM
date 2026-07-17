@@ -39,6 +39,7 @@ static SDL_Renderer*	sdl_renderer = NULL;
 static SDL_Texture*		sdl_texture = NULL;
 static SDL_Surface*		sdl_surface = NULL;
 static Uint32*			sdl_pixels = NULL;
+static Uint32			sdl_palette[256];
 
 // Video globals
 static int				sdl_width = SCREENWIDTH;
@@ -211,11 +212,27 @@ void I_StartFrame(void)
 //
 void I_UpdateGraphics(void)
 {
+	int i;
+	byte* src;
+
 	if (!sdl_window || !sdl_renderer || !sdl_texture)
 		return;
 
-	// Copy framebuffer to texture
-	SDL_UpdateTexture(sdl_texture, NULL, screens[0], SCREENWIDTH);
+	// Allocate 32-bit conversion buffer on first use
+	if (!sdl_pixels)
+	{
+		sdl_pixels = malloc(SCREENWIDTH * SCREENHEIGHT * sizeof(Uint32));
+		if (!sdl_pixels)
+			I_Error("I_UpdateGraphics: couldn't allocate pixel buffer");
+	}
+
+	// Convert 8-bit palettized framebuffer to 32-bit ARGB
+	src = screens[0];
+	for (i = 0; i < SCREENWIDTH * SCREENHEIGHT; i++)
+		sdl_pixels[i] = sdl_palette[src[i]];
+
+	// Copy framebuffer to texture (pitch is in BYTES per row: 320 * 4)
+	SDL_UpdateTexture(sdl_texture, NULL, sdl_pixels, SCREENWIDTH * sizeof(Uint32));
 
 	// Clear and render
 	SDL_RenderClear(sdl_renderer);
@@ -368,9 +385,16 @@ void I_ReadScreen(byte* scr)
 
 void I_SetPalette(byte *palette)
 {
-	// In a real implementation, this would set the color palette
-	// For SDL2 with 32-bit graphics, palette handling would be more complex
-	// For now, we'll just ignore it since we're using 24-bit graphics
+	// Convert DOOM's 256-color RGB palette (768 bytes) to ARGB8888
+	int i;
+
+	for (i = 0; i < 256; i++)
+	{
+		Uint32 r = palette[i*3 + 0];
+		Uint32 g = palette[i*3 + 1];
+		Uint32 b = palette[i*3 + 2];
+		sdl_palette[i] = 0xFF000000 | (r << 16) | (g << 8) | b;
+	}
 }
 
 void I_StartTic(void)

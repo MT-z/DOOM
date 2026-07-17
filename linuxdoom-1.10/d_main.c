@@ -1018,6 +1018,16 @@ void D_DoomMain (void)
     printf ("W_Init: Init WADfiles.\n");
     W_InitMultipleFiles (wadfiles);
     
+    // Detect Ultimate DOOM (retail): doom.wad with episode 4 present.
+    // IdentifyVersion only checks the filename, so a retail WAD named
+    // doom.wad would otherwise be misdetected as registered and the
+    // demo loop would request the missing HELP2 lump.
+    if (gamemode == registered && W_CheckNumForName("E4M1") >= 0)
+    {
+	gamemode = retail;
+	printf ("Ultimate DOOM (retail) detected via E4M1.\n");
+    }
+    
 
     // Check for -file in shareware
     if (modifiedgame)
