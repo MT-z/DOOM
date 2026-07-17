@@ -53,6 +53,20 @@ static int				lastmousey = 0;
 static boolean			mousemoved = false;
 static ticcmd_t			emptycmd;
 
+// Gamepad (SDL GameController: Xbox / PS / etc. unified layout)
+static SDL_GameController*	gamepad = NULL;
+#define GAMEPAD_DEADZONE	4000
+
+// Analog axes consumed by G_BuildTiccmd (g_game.c)
+extern int joysidemove;		// left stick X: strafe
+extern int joy_weaponchange;	// pending weapon index from L1/R1 (-1 = none)
+
+// From doomstat/g_game: current weapon for L1/R1 cycling
+#include "d_player.h"
+extern player_t players[MAXPLAYERS];
+extern int consoleplayer;
+extern boolean usergame;
+
 //
 // I_TranslateKey
 // Translates SDL2 keycodes to DOOM keycodes
@@ -103,6 +117,141 @@ static int I_TranslateKey(SDL_Keycode key)
 		break;
 	}
 	return 0;
+}
+
+//
+// I_OpenGamepad
+// Open the first available game controller
+//
+static void I_OpenGamepad(void)
+{
+	int i;
+
+	if (gamepad)
+		return;
+
+	for (i = 0; i < SDL_NumJoysticks(); i++)
+	{
+		if (SDL_IsGameController(i))
+		{
+			gamepad = SDL_GameControllerOpen(i);
+			if (gamepad)
+			{
+				printf("Gamepad connected: %s\n",
+					   SDL_GameControllerName(gamepad));
+				break;
+			}
+		}
+	}
+}
+
+//
+// I_ApplyDeadzone
+//
+static int I_ApplyDeadzone(int value)
+{
+	if (value > -GAMEPAD_DEADZONE && value < GAMEPAD_DEADZONE)
+		return 0;
+	return value;
+}
+
+//
+// I_CycleWeapon
+// Select previous/next owned weapon relative to the current one
+//
+static void I_CycleWeapon(int dir)
+{
+	player_t* p;
+	int w;
+	int i;
+
+	if (!usergame)
+		return;
+
+	p = &players[consoleplayer];
+	w = p->readyweapon;
+
+	for (i = 0; i < NUMWEAPONS; i++)
+	{
+		w = (w + dir + NUMWEAPONS) % NUMWEAPONS;
+		// BT_WEAPONMASK is 3 bits: only weapons 0-7 selectable
+		if (w <= 7 && p->weaponowned[w])
+		{
+			joy_weaponchange = w;
+			return;
+		}
+	}
+}
+
+//
+// I_PollGamepad
+// Poll analog axes and post button state each frame
+//
+static void I_PollGamepad(void)
+{
+	event_t doom_event;
+	int buttons;
+	int turn;
+	int fwd;
+	int side;
+
+	if (!gamepad)
+		return;
+
+	// Axes
+	turn = I_ApplyDeadzone(
+		SDL_GameControllerGetAxis(gamepad, SDL_CONTROLLER_AXIS_RIGHTX));
+	fwd = I_ApplyDeadzone(
+		SDL_GameControllerGetAxis(gamepad, SDL_CONTROLLER_AXIS_LEFTY));
+	side = I_ApplyDeadzone(
+		SDL_GameControllerGetAxis(gamepad, SDL_CONTROLLER_AXIS_LEFTX));
+
+	// Strafe axis is consumed directly by G_BuildTiccmd
+	joysidemove = side;
+
+	// Buttons -> joybutton bits matching .doomrc defaults:
+	// bit0 = fire (joyb_fire 0), bit2 = speed/run (joyb_speed 2),
+	// bit3 = use (joyb_use 3)
+	buttons = 0;
+
+	// R2: fire
+	if (SDL_GameControllerGetAxis(gamepad,
+			SDL_CONTROLLER_AXIS_TRIGGERRIGHT) > 8000)
+		buttons |= 1;
+
+	// L2: run
+	if (SDL_GameControllerGetAxis(gamepad,
+			SDL_CONTROLLER_AXIS_TRIGGERLEFT) > 8000)
+		buttons |= 4;
+
+	// A (Xbox) / Cross (PS): use/open
+	if (SDL_GameControllerGetButton(gamepad, SDL_CONTROLLER_BUTTON_A))
+		buttons |= 8;
+
+	doom_event.type = ev_joystick;
+	doom_event.data1 = buttons;
+	doom_event.data2 = turn;   // right stick X: turn
+	doom_event.data3 = fwd;    // left stick Y: forward/back
+	D_PostEvent(&doom_event);
+}
+
+//
+// I_GamepadButtonKey
+// Map gamepad buttons to DOOM keys (menus, weapon cycling)
+//
+static int I_GamepadButtonKey(Uint8 button)
+{
+	switch (button)
+	{
+	case SDL_CONTROLLER_BUTTON_START:		return KEY_ESCAPE;
+	case SDL_CONTROLLER_BUTTON_A:			return KEY_ENTER;
+	case SDL_CONTROLLER_BUTTON_B:			return KEY_BACKSPACE;
+	case SDL_CONTROLLER_BUTTON_DPAD_UP:		return KEY_UPARROW;
+	case SDL_CONTROLLER_BUTTON_DPAD_DOWN:	return KEY_DOWNARROW;
+	case SDL_CONTROLLER_BUTTON_DPAD_LEFT:	return KEY_LEFTARROW;
+	case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:	return KEY_RIGHTARROW;
+	default:								return 0;
+	}
 }
 
 //
@@ -193,6 +342,52 @@ void I_GetEvent(void)
 				D_PostEvent(&doom_event);
 			}
 			break;
+
+		case SDL_CONTROLLERDEVICEADDED:
+			I_OpenGamepad();
+			break;
+
+		case SDL_CONTROLLERDEVICEREMOVED:
+			if (gamepad && event.cdevice.which ==
+				SDL_JoystickInstanceID(
+					SDL_GameControllerGetJoystick(gamepad)))
+			{
+				SDL_GameControllerClose(gamepad);
+				gamepad = NULL;
+				printf("Gamepad disconnected\n");
+			}
+			break;
+
+		case SDL_CONTROLLERBUTTONDOWN:
+			// L1/R1: weapon cycling (gameplay)
+			if (event.cbutton.button == SDL_CONTROLLER_BUTTON_LEFTSHOULDER)
+				I_CycleWeapon(-1);
+			else if (event.cbutton.button == SDL_CONTROLLER_BUTTON_RIGHTSHOULDER)
+				I_CycleWeapon(1);
+			else
+			{
+				// Menu navigation keys
+				int key = I_GamepadButtonKey(event.cbutton.button);
+				if (key)
+				{
+					doom_event.type = ev_keydown;
+					doom_event.data1 = key;
+					D_PostEvent(&doom_event);
+				}
+			}
+			break;
+
+		case SDL_CONTROLLERBUTTONUP:
+			{
+				int key = I_GamepadButtonKey(event.cbutton.button);
+				if (key)
+				{
+					doom_event.type = ev_keyup;
+					doom_event.data1 = key;
+					D_PostEvent(&doom_event);
+				}
+			}
+			break;
 		}
 	}
 }
@@ -204,6 +399,9 @@ void I_StartFrame(void)
 {
 	// Update display
 	I_GetEvent();
+
+	// Poll gamepad analog state
+	I_PollGamepad();
 }
 
 //
@@ -252,13 +450,16 @@ void I_InitGraphics(void)
 	printf("I_InitGraphics: Starting SDL2 initialization\n");
 	fflush(stdout);
 
-	// Initialize SDL2
-	if (SDL_Init(SDL_INIT_VIDEO) < 0)
+	// Initialize SDL2 (video + game controller support)
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER) < 0)
 	{
 		printf("I_InitGraphics: SDL_Init failed: %s\n", SDL_GetError());
 		fflush(stdout);
 		I_Error("SDL_Init failed: %s", SDL_GetError());
 	}
+
+	// Open gamepad if one is already connected
+	I_OpenGamepad();
 
 	windowflags = 0;
 
@@ -342,6 +543,12 @@ void I_InitGraphics(void)
 void I_ShutdownGraphics(void)
 {
 	SDL_SetRelativeMouseMode(SDL_FALSE);
+
+	if (gamepad)
+	{
+		SDL_GameControllerClose(gamepad);
+		gamepad = NULL;
+	}
 
 	if (sdl_texture)
 	{
