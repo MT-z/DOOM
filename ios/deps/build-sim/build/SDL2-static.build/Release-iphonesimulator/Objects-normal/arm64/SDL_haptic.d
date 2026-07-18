@@ -1,0 +1,26 @@
+dependencies: \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/SDL2-2.32.8/src/haptic/SDL_haptic.c \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/SDL2-2.32.8/src/haptic/../SDL_internal.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/SDL2-2.32.8/src/haptic/../dynapi/SDL_dynapi.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include-config-release/SDL2/SDL_config.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_platform.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/begin_code.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/close_code.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_assert.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_stdinc.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_log.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/SDL2-2.32.8/src/haptic/SDL_syshaptic.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_haptic.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_error.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_joystick.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_guid.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_mutex.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/SDL2-2.32.8/src/haptic/SDL_haptic_c.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/SDL2-2.32.8/src/haptic/../joystick/SDL_joystick_c.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/SDL2-2.32.8/src/haptic/../joystick/../SDL_internal.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_gamecontroller.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_rwops.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_sensor.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_hints.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/SDL2-2.32.8/src/haptic/../SDL_hints_c.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/SDL2-2.32.8/src/haptic/.././SDL_internal.h
