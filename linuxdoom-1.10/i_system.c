@@ -48,7 +48,9 @@ rcsid[] = "$Id: m_bbox.c,v 1.1 1997/02/03 22:45:10 b1 Exp $";
 
 
 
-int	mb_used = 6;
+// 64-bit structs are larger and savegames now allocate from the
+// zone as well, so give the zone more room than the DOS default.
+int	mb_used = 16;
 
 
 void

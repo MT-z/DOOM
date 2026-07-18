@@ -95,6 +95,10 @@ static channel_t channels[NUM_CHANNELS];
 // Volume lookup tables
 static int vol_lookup[128 * 256];
 
+// Pitch step table: maps the 0-255 pitch parameter to a 16.16
+// resampling step (128 = normal pitch, 64 steps per octave).
+static int steptable[256];
+
 // Mixing buffer
 static signed short mixbuffer[MIXBUFFERSIZE];
 
@@ -167,6 +171,10 @@ void I_InitSound(void)
 		for (j = 0; j < 256; j++)
 			vol_lookup[i * 256 + j] = (i * (j - 128) * 256) / 127;
 	}
+
+	// Initialize pitch step table (as in the original DOS version)
+	for (i = 0; i < 256; i++)
+		steptable[i] = (int)(pow(2.0, (i - 128) / 64.0) * 65536.0);
 
 	// Pre-cache all sound effects, as s_sound.c expects
 	// (it warns "16bit and not pre-cached - wtf?" otherwise).
@@ -412,7 +420,7 @@ int I_StartSound(int id, int vol, int sep, int pitch, int priority)
 	channels[chan].data = (unsigned char*)sfx->data;
 	channels[chan].end = channels[chan].data + soundlength;
 	channels[chan].stepremainder = 0;
-	channels[chan].step = FRACUNIT;  // Use standard pitch for now
+	channels[chan].step = steptable[pitch & 0xff];
 	channels[chan].volume = vol;
 	channels[chan].left_volume = leftvol;
 	channels[chan].right_volume = rightvol;
@@ -718,24 +726,14 @@ void I_UpdateNETgamestate(void)
 
 void I_InitNetwork(void)
 {
-	// Stub for single-player only - set up minimal doomcom structure
-	// Network multiplayer is not implemented
-	printf("I_InitNetwork: Initializing single-player network (stub)\n");
-	fflush(stdout);
-	
+	// Single-player only: network multiplayer is not implemented.
 	if (!doomcom)
 	{
-		printf("I_InitNetwork: Allocating doomcom structure\n");
 		doomcom = malloc(sizeof(doomcom_t));
 		if (!doomcom)
-		{
-			printf("I_InitNetwork: ERROR - malloc failed!\n");
-			return; // Let main code handle error
-		}
+			I_Error("I_InitNetwork: malloc failed");
 	}
-	
-	// Set up single-player defaults
-	printf("I_InitNetwork: Setting up single-player defaults\n");
+
 	memset(doomcom, 0, sizeof(doomcom_t));
 	doomcom->id = DOOMCOM_ID;
 	doomcom->numplayers = 1;
@@ -744,8 +742,6 @@ void I_InitNetwork(void)
 	doomcom->consoleplayer = 0;
 	doomcom->ticdup = 1;
 	doomcom->extratics = 0;
-	printf("I_InitNetwork: Single-player setup complete\n");
-	fflush(stdout);
 }
 
 void I_NetCmd(void)
@@ -781,6 +777,39 @@ void I_FinishUpdate(void)
 
 void I_UpdateSoundParams(int handle, int vol, int sep, int pitch)
 {
-	// Not implemented - would update parameters of a playing sound
-	// For now, sounds play at fixed parameters
+	int leftvol;
+	int rightvol;
+
+	if (handle < 0 || handle >= NUM_CHANNELS)
+		return;
+	if (channels[handle].id == 0)
+		return;
+
+	// Same separation math as I_StartSound
+	if (sep < 0)
+	{
+		sep = -sep;
+		leftvol = vol - (vol * sep) / 255;
+		rightvol = vol;
+	}
+	else if (sep > 0)
+	{
+		rightvol = vol - (vol * sep) / 255;
+		leftvol = vol;
+	}
+	else
+	{
+		leftvol = vol;
+		rightvol = vol;
+	}
+
+	if (leftvol < 0) leftvol = 0;
+	if (leftvol > 127) leftvol = 127;
+	if (rightvol < 0) rightvol = 0;
+	if (rightvol > 127) rightvol = 127;
+
+	channels[handle].volume = vol;
+	channels[handle].left_volume = leftvol;
+	channels[handle].right_volume = rightvol;
+	channels[handle].step = steptable[pitch & 0xff];
 }

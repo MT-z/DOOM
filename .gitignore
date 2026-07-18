@@ -32,3 +32,4 @@ xcuserdata/
 # Game data (commercial assets - NEVER commit)
 *.wad
 *.WAD
+*.dsg

@@ -71,7 +71,9 @@ rcsid[] = "$Id: g_game.c,v 1.8 1997/02/03 22:45:09 b1 Exp $";
 #include "g_game.h"
 
 
-#define SAVEGAMESIZE	0x2c000
+// On 64-bit builds the archived structs contain 8-byte pointers,
+// so saves are considerably larger than on DOS.
+#define SAVEGAMESIZE	0x80000
 #define SAVESTRINGSIZE	24
 
 
@@ -1296,7 +1298,9 @@ void G_DoSaveGame (void)
 	sprintf (name,SAVEGAMENAME"%d.dsg",savegameslot); 
     description = savedescription; 
 	 
-    save_p = savebuffer = screens[1]+0x4000; 
+    // Use a dedicated buffer: the original wrote into the video
+    // screen buffers, which overflows with 64-bit struct sizes.
+    save_p = savebuffer = Z_Malloc(SAVEGAMESIZE, PU_STATIC, NULL);
 	 
     memcpy (save_p, description, SAVESTRINGSIZE); 
     save_p += SAVESTRINGSIZE; 
@@ -1325,6 +1329,7 @@ void G_DoSaveGame (void)
     if (length > SAVEGAMESIZE) 
 	I_Error ("Savegame buffer overrun"); 
     M_WriteFile (name, savebuffer, length); 
+    Z_Free (savebuffer);
     gameaction = ga_nothing; 
     savedescription[0] = 0;		 
 	 

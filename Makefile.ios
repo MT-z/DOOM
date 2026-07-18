@@ -30,7 +30,7 @@ SDLLIBS  = $(SDLDIR)/Release-iphonesimulator/libSDL2.a \
            $(SDLDIR)/Release-iphonesimulator/libSDL2main.a
 
 CFLAGS  = -g -O2 -arch $(ARCH) -isysroot $(SDKPATH) $(MINVER)
-CFLAGS += -DNORMALUNIX -DMACOS -DIOS
+CFLAGS += -DNORMALUNIX -DMACOS -DIOS -DUSE_OPL_MUSIC
 CFLAGS += -I$(SDLDIR)/include -I$(SDLDIR)/include/SDL2 -I$(SDLDIR)/include-config-release/SDL2
 
 # Build with `make -f Makefile.ios ASAN=1` for AddressSanitizer
@@ -115,7 +115,9 @@ OBJS = \
 	$(O)/s_sound.o \
 	$(O)/z_zone.o \
 	$(O)/info.o \
-	$(O)/sounds.o
+	$(O)/sounds.o \
+	$(O)/opl3.o \
+	$(O)/i_oplmusic.o
 
 APP = $(O)/Doom.app
 

@@ -120,15 +120,14 @@ WAD 内の GENMIDI 音色を使用）です。
 ./macos/doom -iwad DOOM.WAD -skill 3
 ```
 
-#### マルチプレイネットワーク（実験的）
+#### セーブデータのロード
 
 ```bash
-# ホストサーバー起動
-./macos/doom -iwad DOOM.WAD -server 4 10000
-
-# クライアント接続
-./macos/doom -iwad DOOM.WAD -connect hostname 10000
+# スロット 0 のセーブデータ（doomsav0.dsg）を起動時にロード
+./macos/doom -iwad DOOM.WAD -loadgame 0
 ```
+
+> **注意:** ネットワークマルチプレイは現在未対応です（シングルプレイのみ）。
 
 ## ゲーム内キーバインド
 
@@ -332,8 +331,8 @@ Intel Mac：
 ## 今後の拡張機能
 
 - 🖼️ OpenGL/Metal レンダリング
-- 📱 ネットワークマルチプレイの完全実装
-- 💾 savegame の改善
+- 📱 ネットワークマルチプレイの実装
+- 📦 .app バンドル化
 
 ## ライセンス
 
