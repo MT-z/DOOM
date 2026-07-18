@@ -1,0 +1,23 @@
+# Build artifacts
+macos/
+tmp/
+linux/
+*.o
+*.a
+*.so
+*.dylib
+
+# Editor temporary files
+*~
+*.swp
+*.swo
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+*.code-workspace
+
+# Game data (commercial assets - NEVER commit)
+*.wad
+*.WAD

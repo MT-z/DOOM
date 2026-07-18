@@ -36,6 +36,10 @@ rcsid[] = "$Id: r_draw.c,v 1.4 1997/02/03 16:47:55 b1 Exp $";
 
 #include "r_local.h"
 
+#if defined(LINUX) || defined(__APPLE__) || defined(__unix__)
+#include <stdint.h>
+#endif
+
 // Needs access to LFB (guess what).
 #include "v_video.h"
 
@@ -461,7 +465,8 @@ void R_InitTranslationTables (void)
     int		i;
 	
     translationtables = Z_Malloc (256*3+255, PU_STATIC, 0);
-    translationtables = (byte *)(( (int)translationtables + 255 )& ~255);
+    // FIXED: Use uintptr_t instead of int for 64-bit pointer arithmetic
+    translationtables = (byte *)( ((uintptr_t)translationtables + 255) & ~255);
     
     // translate just the 16 green colors
     for (i=0 ; i<256 ; i++)

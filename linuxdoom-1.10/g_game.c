@@ -198,8 +198,14 @@ int		dclickstate2;
 int		dclicks2;
 
 // joystick values are repeated 
+// Analog gamepad: axes hold SDL values (-32768..32767) after deadzone.
+// joyxmove = right stick X (turn), joyymove = left stick Y (forward),
+// joysidemove = left stick X (strafe).
 int             joyxmove;
 int		joyymove;
+int             joysidemove;
+// Pending weapon change from gamepad L1/R1 (-1 = none)
+int             joy_weaponchange = -1;
 boolean         joyarray[5]; 
 boolean*	joybuttons = &joyarray[1];		// allow [-1] 
  
@@ -287,11 +293,6 @@ void G_BuildTiccmd (ticcmd_t* cmd)
 	    //	fprintf(stderr, "strafe left\n");
 	    side -= sidemove[speed]; 
 	}
-	if (joyxmove > 0) 
-	    side += sidemove[speed]; 
-	if (joyxmove < 0) 
-	    side -= sidemove[speed]; 
- 
     } 
     else 
     { 
@@ -299,29 +300,31 @@ void G_BuildTiccmd (ticcmd_t* cmd)
 	    cmd->angleturn -= angleturn[tspeed]; 
 	if (gamekeydown[key_left]) 
 	    cmd->angleturn += angleturn[tspeed]; 
-	if (joyxmove > 0) 
-	    cmd->angleturn -= angleturn[tspeed]; 
-	if (joyxmove < 0) 
-	    cmd->angleturn += angleturn[tspeed]; 
     } 
+
+    // Analog gamepad: right stick X turns, scaled by deflection
+    if (joyxmove)
+	cmd->angleturn -= (joyxmove * angleturn[tspeed]) / 32768;
  
-    if (gamekeydown[key_up]) 
+    if (gamekeydown[key_up] || gamekeydown['w']) 
     {
 	// fprintf(stderr, "up\n");
 	forward += forwardmove[speed]; 
     }
-    if (gamekeydown[key_down]) 
+    if (gamekeydown[key_down] || gamekeydown['s']) 
     {
 	// fprintf(stderr, "down\n");
 	forward -= forwardmove[speed]; 
     }
-    if (joyymove < 0) 
-	forward += forwardmove[speed]; 
-    if (joyymove > 0) 
-	forward -= forwardmove[speed]; 
-    if (gamekeydown[key_straferight]) 
+    // Analog gamepad: left stick Y = forward/back,
+    // left stick X = strafe, scaled by deflection
+    if (joyymove)
+	forward -= (joyymove * forwardmove[speed]) / 32768;
+    if (joysidemove)
+	side += (joysidemove * sidemove[speed]) / 32768;
+    if (gamekeydown[key_straferight] || gamekeydown['d']) 
 	side += sidemove[speed]; 
-    if (gamekeydown[key_strafeleft]) 
+    if (gamekeydown[key_strafeleft] || gamekeydown['a']) 
 	side -= sidemove[speed];
     
     // buttons
@@ -346,6 +349,17 @@ void G_BuildTiccmd (ticcmd_t* cmd)
 	    cmd->buttons |= i<<BT_WEAPONSHIFT; 
 	    break; 
 	}
+
+    // gamepad L1/R1 weapon cycling (number keys take precedence)
+    if (joy_weaponchange >= 0)
+    {
+	if (!(cmd->buttons & BT_CHANGE))
+	{
+	    cmd->buttons |= BT_CHANGE;
+	    cmd->buttons |= joy_weaponchange<<BT_WEAPONSHIFT;
+	}
+	joy_weaponchange = -1;
+    }
     
     // mouse
     if (mousebuttons[mousebforward]) 
@@ -489,7 +503,8 @@ void G_DoLoadLevel (void)
     
     // clear cmd building stuff
     memset (gamekeydown, 0, sizeof(gamekeydown)); 
-    joyxmove = joyymove = 0; 
+    joyxmove = joyymove = 0;
+    joysidemove = 0; 
     mousex = mousey = 0; 
     sendpause = sendsave = paused = false; 
     memset (mousebuttons, 0, sizeof(mousebuttons)); 
@@ -585,8 +600,8 @@ boolean G_Responder (event_t* ev)
 	joybuttons[1] = ev->data1 & 2; 
 	joybuttons[2] = ev->data1 & 4; 
 	joybuttons[3] = ev->data1 & 8; 
-	joyxmove = ev->data2; 
-	joyymove = ev->data3; 
+	joyxmove = ev->data2;      // right stick X: turn
+	joyymove = ev->data3;      // left stick Y: forward/back
 	return true;    // eat events 
  
       default: 

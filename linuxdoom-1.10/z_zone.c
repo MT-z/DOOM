@@ -267,8 +267,9 @@ Z_Malloc
     if (user)
     {
 	// mark as an in use block
-	base->user = user;			
-	*(void **)user = (void *) ((byte *)base + sizeof(memblock_t));
+	base->user = user;
+	void *allocated_ptr = (void *) ((byte *)base + sizeof(memblock_t));
+	*(void **)user = allocated_ptr;
     }
     else
     {

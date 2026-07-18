@@ -31,10 +31,13 @@ rcsid[] = "$Id: w_wad.c,v 1.5 1997/02/03 16:47:57 b1 Exp $";
 #include <sys/types.h>
 #include <string.h>
 #include <unistd.h>
-#include <malloc.h>
+#include <stdlib.h>  // malloc, calloc, free
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <errno.h>
+#if defined(LINUX) || defined(__APPLE__) || defined(__unix__)
 #include <alloca.h>
+#endif
 #define O_BINARY		0
 #endif
 
@@ -305,14 +308,32 @@ void W_InitMultipleFiles (char** filenames)
     if (!numlumps)
 	I_Error ("W_InitFiles: no files found");
     
+    printf("W_InitMultipleFiles: numlumps = %d\n", numlumps);
+    printf("W_InitMultipleFiles: sizeof(*lumpcache) = %zu\n", sizeof(*lumpcache));
+    fflush(stdout);
+    
     // set up caching
     size = numlumps * sizeof(*lumpcache);
+    printf("W_InitMultipleFiles: Allocating lumpcache with size %d (%d * %zu)\n", 
+           size, numlumps, sizeof(*lumpcache));
+    fflush(stdout);
+    
     lumpcache = malloc (size);
+    
+    printf("W_InitMultipleFiles: lumpcache allocated at %p\n", lumpcache);
+    fflush(stdout);
     
     if (!lumpcache)
 	I_Error ("Couldn't allocate lumpcache");
 
     memset (lumpcache,0, size);
+    
+    printf("W_InitMultipleFiles: lumpcache initialization complete\n");
+    printf("  lumpcache[0] is at %p, value=%p\n", &lumpcache[0], lumpcache[0]);
+    printf("  lumpcache[1] is at %p, value=%p\n", &lumpcache[1], lumpcache[1]);
+    printf("  lumpcache[2] is at %p, value=%p\n", &lumpcache[2], lumpcache[2]);
+    printf("  lumpcache[2306] would be at %p (last valid is lumpcache[2305])\n", &lumpcache[2306]);
+    fflush(stdout);
 }
 
 
@@ -436,6 +457,7 @@ W_ReadLump
     int		c;
     lumpinfo_t*	l;
     int		handle;
+    off_t	seek_result;
 	
     if (lump >= numlumps)
 	I_Error ("W_ReadLump: %i >= numlumps",lump);
@@ -453,12 +475,17 @@ W_ReadLump
     else
 	handle = l->handle;
 		
-    lseek (handle, l->position, SEEK_SET);
+    seek_result = lseek (handle, l->position, SEEK_SET);
+    if (seek_result == -1)
+	I_Error("W_ReadLump: lseek failed on lump %i",lump);
+    
     c = read (handle, dest, l->size);
 
     if (c < l->size)
+    {
 	I_Error ("W_ReadLump: only read %i of %i on lump %i",
-		 c,l->size,lump);	
+		 c,l->size,lump);
+    }
 
     if (l->handle == -1)
 	close (handle);
@@ -485,16 +512,11 @@ W_CacheLumpNum
     if (!lumpcache[lump])
     {
 	// read the lump in
-	
-	//printf ("cache miss on lump %i\n",lump);
 	ptr = Z_Malloc (W_LumpLength (lump), tag, &lumpcache[lump]);
 	W_ReadLump (lump, lumpcache[lump]);
     }
     else
-    {
-	//printf ("cache hit on lump %i\n",lump);
 	Z_ChangeTag (lumpcache[lump],tag);
-    }
 	
     return lumpcache[lump];
 }
