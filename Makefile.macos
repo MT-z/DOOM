@@ -11,11 +11,11 @@ CC = clang
 
 # Compiler flags
 CFLAGS = -g -O2 -fPIC
-CFLAGS += -DNORMALUNIX -DMACOS
-CFLAGS += $(shell pkg-config --cflags sdl2)
+CFLAGS += -DNORMALUNIX -DMACOS -DUSE_SDL_MIXER -DUSE_OPL_MUSIC
+CFLAGS += $(shell pkg-config --cflags sdl2 SDL2_mixer)
 
 # Linker flags
-LDFLAGS = $(shell pkg-config --libs sdl2)
+LDFLAGS = $(shell pkg-config --libs sdl2 SDL2_mixer)
 LDFLAGS += -lm
 
 # Output directory for object files
@@ -85,7 +85,10 @@ OBJS = \
 	$(O)/s_sound.o \
 	$(O)/z_zone.o \
 	$(O)/info.o \
-	$(O)/sounds.o
+	$(O)/sounds.o \
+	$(O)/mus2mid.o \
+	$(O)/opl3.o \
+	$(O)/i_oplmusic.o
 
 # Default target
 all: $(O) $(O)/doom

@@ -28,6 +28,15 @@ rcsid[] = "$Id: i_sound_sdl.c,v 1.0 2026/07/18 macos port $";
 
 #include "SDL2/SDL.h"
 
+#ifdef USE_SDL_MIXER
+#include "SDL2/SDL_mixer.h"
+#include "mus2mid.h"
+#endif
+
+#ifdef USE_OPL_MUSIC
+#include "i_oplmusic.h"
+#endif
+
 #include "z_zone.h"
 #include "i_system.h"
 #include "i_sound.h"
@@ -41,6 +50,18 @@ rcsid[] = "$Id: i_sound_sdl.c,v 1.0 2026/07/18 macos port $";
 // Sound device state
 static SDL_AudioDeviceID audio_device = 0;
 static SDL_AudioSpec obtained_spec;
+
+#ifdef USE_SDL_MIXER
+// Music state (SDL2_mixer, MUS lumps converted to MIDI)
+static SDL_bool music_initialized = SDL_FALSE;
+static Mix_Music* music = NULL;
+static unsigned char* music_mididata = NULL;
+#endif
+
+#ifdef USE_OPL_MUSIC
+// Nonzero when the OPL2 FM synthesis backend is active
+static int opl_music = 0;
+#endif
 
 // Configuration
 #define SAMPLERATE		11025
@@ -169,6 +190,61 @@ void I_InitSound(void)
 
 	// Start audio playback
 	SDL_PauseAudioDevice(audio_device, 0);
+
+#ifdef USE_OPL_MUSIC
+	// OPL2 FM synthesis (Sound Blaster / AdLib style) is the
+	// default music backend; pass -gmmusic for General MIDI.
+	if (!M_CheckParm("-gmmusic") && OPL_Init())
+	{
+		opl_music = 1;
+		OPL_SetMusicVolume(snd_MusicVolume);
+		printf("Music initialized (OPL2 FM synthesis)\n");
+		return;
+	}
+#endif
+
+#ifdef USE_SDL_MIXER
+	// Initialize music playback on a separate mixer device.
+	// MIDI rendering is handled by SDL2_mixer via FluidSynth,
+	// which needs a GM soundfont (.sf2).
+	if (Mix_OpenAudio(44100, AUDIO_S16SYS, 2, 1024) < 0)
+	{
+		fprintf(stderr, "I_InitSound: music disabled: %s\n", Mix_GetError());
+	}
+	else
+	{
+		// Locate a soundfont unless one is already configured
+		// via the SDL_SOUNDFONTS environment variable.
+		if (!SDL_getenv("SDL_SOUNDFONTS"))
+		{
+			static const char* soundfont_paths[] =
+			{
+				"/opt/homebrew/share/soundfonts/default.sf2",
+				"/usr/local/share/soundfonts/default.sf2",
+				"/usr/share/soundfonts/default.sf2",
+				NULL
+			};
+			int sf;
+			for (sf = 0; soundfont_paths[sf]; sf++)
+			{
+				FILE* f = fopen(soundfont_paths[sf], "rb");
+				if (f)
+				{
+					fclose(f);
+					Mix_SetSoundFonts(soundfont_paths[sf]);
+					break;
+				}
+			}
+			if (!soundfont_paths[sf])
+				fprintf(stderr, "I_InitSound: no soundfont found; "
+					"music may be silent (set SDL_SOUNDFONTS)\n");
+		}
+
+		music_initialized = SDL_TRUE;
+		Mix_VolumeMusic(snd_MusicVolume * MIX_MAX_VOLUME / 15);
+		printf("Music initialized (SDL2_mixer)\n");
+	}
+#endif
 }
 
 //
@@ -213,6 +289,18 @@ void I_SetMusicVolume(int volume)
 		snd_MusicVolume = 15;
 	if (snd_MusicVolume < 0)
 		snd_MusicVolume = 0;
+
+#ifdef USE_OPL_MUSIC
+	if (opl_music)
+	{
+		OPL_SetMusicVolume(snd_MusicVolume);
+		return;
+	}
+#endif
+#ifdef USE_SDL_MIXER
+	if (music_initialized)
+		Mix_VolumeMusic(snd_MusicVolume * MIX_MAX_VOLUME / 15);
+#endif
 }
 
 //
@@ -457,7 +545,7 @@ static void I_ShutdownSoundModule(void)
 }
 
 //
-// STUB FUNCTIONS for music and other I_ functions
+// MUSIC (SDL2_mixer) and other I_ functions
 //
 
 // Forward declaration from i_video_sdl.c
@@ -465,33 +553,157 @@ extern void I_UpdateGraphics(void);
 
 int I_RegisterSong(void *data)
 {
-	// Not implemented - return dummy handle
+#ifdef USE_OPL_MUSIC
+	if (opl_music)
+	{
+		OPL_RegisterSong(data);
+		return 0;
+	}
+#endif
+#ifdef USE_SDL_MIXER
+	const unsigned char* mus = (const unsigned char*)data;
+	unsigned char* mididata = NULL;
+	int muslen, midilen;
+	SDL_RWops* rw;
+
+	if (!music_initialized || !data)
+		return 0;
+
+	// Free any previous song
+	I_UnRegisterSong(0);
+
+	// The MUS header carries the total data size
+	if (memcmp(mus, "MUS\x1a", 4) != 0)
+	{
+		fprintf(stderr, "I_RegisterSong: not a MUS lump\n");
+		return 0;
+	}
+	muslen = (mus[6] | (mus[7] << 8)) + (mus[4] | (mus[5] << 8));
+
+	if (mus2mid(mus, muslen, &mididata, &midilen) != 0)
+	{
+		fprintf(stderr, "I_RegisterSong: MUS to MIDI conversion failed\n");
+		return 0;
+	}
+
+	rw = SDL_RWFromMem(mididata, midilen);
+	music = Mix_LoadMUS_RW(rw, SDL_TRUE);
+	if (!music)
+	{
+		fprintf(stderr, "I_RegisterSong: %s\n", Mix_GetError());
+		free(mididata);
+		return 0;
+	}
+
+	music_mididata = mididata;
+#endif
 	return 0;
 }
 
 void I_UnRegisterSong(int handle)
 {
-	// Not implemented
+#ifdef USE_OPL_MUSIC
+	if (opl_music)
+	{
+		OPL_UnRegisterSong();
+		return;
+	}
+#endif
+#ifdef USE_SDL_MIXER
+	if (music)
+	{
+		Mix_HaltMusic();
+		Mix_FreeMusic(music);
+		music = NULL;
+	}
+	if (music_mididata)
+	{
+		free(music_mididata);
+		music_mididata = NULL;
+	}
+#endif
 }
 
 void I_PlaySong(int handle, int looping)
 {
-	// Not implemented - would need a proper music player
+#ifdef USE_OPL_MUSIC
+	if (opl_music)
+	{
+		OPL_PlaySong(looping);
+		return;
+	}
+#endif
+#ifdef USE_SDL_MIXER
+	if (!music)
+		return;
+
+	if (Mix_PlayMusic(music, looping ? -1 : 1) < 0)
+		fprintf(stderr, "I_PlaySong: %s\n", Mix_GetError());
+	else
+		Mix_VolumeMusic(snd_MusicVolume * MIX_MAX_VOLUME / 15);
+#endif
 }
 
 void I_StopSong(int handle)
 {
-	// Not implemented
+#ifdef USE_OPL_MUSIC
+	if (opl_music)
+	{
+		OPL_StopSong();
+		return;
+	}
+#endif
+#ifdef USE_SDL_MIXER
+	Mix_HaltMusic();
+#endif
 }
 
 void I_PauseSong(int handle)
 {
-	// Not implemented
+#ifdef USE_OPL_MUSIC
+	if (opl_music)
+	{
+		OPL_PauseSong();
+		return;
+	}
+#endif
+#ifdef USE_SDL_MIXER
+	Mix_PauseMusic();
+#endif
 }
 
 void I_ResumeSong(int handle)
 {
-	// Not implemented
+#ifdef USE_OPL_MUSIC
+	if (opl_music)
+	{
+		OPL_ResumeSong();
+		return;
+	}
+#endif
+#ifdef USE_SDL_MIXER
+	Mix_ResumeMusic();
+#endif
+}
+
+void I_ShutdownMusic(void)
+{
+#ifdef USE_OPL_MUSIC
+	if (opl_music)
+	{
+		OPL_Shutdown();
+		opl_music = 0;
+		return;
+	}
+#endif
+#ifdef USE_SDL_MIXER
+	if (music_initialized)
+	{
+		I_UnRegisterSong(0);
+		Mix_CloseAudio();
+		music_initialized = SDL_FALSE;
+	}
+#endif
 }
 
 void I_UpdateNETgamestateFinished(void)

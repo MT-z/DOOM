@@ -5,7 +5,8 @@
 - macOS 11.0 以上
 - Apple Silicon (arm64) またはIntel Mac
 - Homebrew がインストール済み
-- SDL2 ライブラリ
+- SDL2 / SDL2_mixer ライブラリ
+- GM サウンドフォント（`-gmmusic` 使用時のみ必要、下記参照）
 
 詳細は [MACOS_PORT.md](MACOS_PORT.md) のセットアップセクションを参照してください。
 
@@ -87,6 +88,19 @@ DOOM の WAD ファイルはいくつかの方法で入手できます：
 
 ```bash
 ./macos/doom -iwad DOOM.WAD -devparm
+```
+
+#### BGM バックエンドの選択
+
+デフォルトは **OPL2 FM 音源エミュレーション**（Sound Blaster / AdLib の音を再現、
+WAD 内の GENMIDI 音色を使用）です。
+
+```bash
+# OPL2 FM 音源（デフォルト、当時の Sound Blaster の音）
+./macos/doom -iwad DOOM.WAD
+
+# General MIDI（FluidSynth + サウンドフォント、リアルな楽器音）
+./macos/doom -iwad DOOM.WAD -gmmusic
 ```
 
 #### 特定レベルの開始
@@ -228,10 +242,10 @@ SDL2 GameController API により Xbox / PlayStation / Switch Pro などのコ�
 
 **エラー:** `clang: error: -lSDL2: linker command failed`
 
-**解決:** SDL2 をインストール
+**解決:** SDL2 / SDL2_mixer をインストール
 
 ```bash
-brew install sdl2
+brew install sdl2 sdl2_mixer
 ```
 
 ### ウィンドウが表示されない
@@ -272,6 +286,27 @@ osascript -e "output volume of (get volume settings)"
 1. **システム設定** → **サウンド**
 2. **出力**タブで希望するデバイスを選択
 
+### BGM が鳴らない（-gmmusic 使用時）
+
+**エラー:** `I_RegisterSong: No SoundFonts have been requested`
+
+**原因:** General MIDI 再生（FluidSynth）に必要な GM サウンドフォント（.sf2）が見つからない。
+デフォルトの OPL2 FM 音源はサウンドフォント不要です。
+
+**解決:** フリーのサウンドフォントを配置（例: GeneralUser GS）
+
+```bash
+mkdir -p /opt/homebrew/share/soundfonts
+curl -fsSL -o /opt/homebrew/share/soundfonts/default.sf2 \
+  "https://github.com/mrbumpy409/GeneralUser-GS/raw/main/GeneralUser-GS.sf2"
+```
+
+任意の場所に置く場合は環境変数で指定できます：
+
+```bash
+SDL_SOUNDFONTS=/path/to/font.sf2 ./macos/doom -iwad DOOM.WAD
+```
+
 ## パフォーマンス最適化
 
 ### フレームレート制限
@@ -296,7 +331,6 @@ Intel Mac：
 
 ## 今後の拡張機能
 
-- 🎵 MIDI/デジタルミュージックサポート
 - 🖼️ OpenGL/Metal レンダリング
 - 📱 ネットワークマルチプレイの完全実装
 - 💾 savegame の改善

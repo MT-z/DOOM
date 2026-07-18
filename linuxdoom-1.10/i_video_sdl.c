@@ -626,8 +626,3 @@ void I_UpdateNoBlit(void)
 {
 	// Update without blitting - skip for now
 }
-
-void I_ShutdownMusic(void)
-{
-	// Shutdown music - stub for now
-}
