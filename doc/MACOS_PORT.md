@@ -272,12 +272,9 @@ git push origin feature/your-feature
 
 ## Future Improvements
 
-- [ ] OpenGL renderer option
+- [ ] Network multiplayer
+- [ ] .app bundle packaging
 - [ ] High-resolution texture support
-- [ ] Improved network stability
-- [ ] Controller/gamepad support
-- [ ] Wayland support (for Linux)
-- [ ] Metal renderer option (Apple Silicon optimization)
 
 ## License
 
