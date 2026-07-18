@@ -1,0 +1,7 @@
+Target dependency graph (3 targets)
+Target 'SDL2-static' in project 'SDL2'
+➜ Explicit dependency on target 'sdl_headers_copy' in project 'SDL2'
+➜ Explicit dependency on target 'ZERO_CHECK' in project 'SDL2'
+Target 'sdl_headers_copy' in project 'SDL2'
+➜ Explicit dependency on target 'ZERO_CHECK' in project 'SDL2'
+Target 'ZERO_CHECK' in project 'SDL2' (no dependencies)

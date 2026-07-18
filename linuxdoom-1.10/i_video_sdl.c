@@ -463,6 +463,13 @@ void I_InitGraphics(void)
 
 	windowflags = 0;
 
+#ifdef IOS
+	// iOS: landscape only, always fullscreen, use native resolution
+	// (LandscapeRight first: it is used as the initial orientation)
+	SDL_SetHint(SDL_HINT_ORIENTATIONS, "LandscapeRight LandscapeLeft");
+	windowflags |= SDL_WINDOW_FULLSCREEN | SDL_WINDOW_ALLOW_HIGHDPI;
+#endif
+
 	// Check for fullscreen mode
 	if (M_CheckParm("-fullscreen"))
 		windowflags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
@@ -500,11 +507,16 @@ void I_InitGraphics(void)
 	if (!sdl_renderer)
 		I_Error("SDL_CreateRenderer failed: %s", SDL_GetError());
 
+#ifdef IOS
+	// iOS: scale the 320x200 framebuffer to fill the screen (letterboxed)
+	SDL_RenderSetLogicalSize(sdl_renderer, SCREENWIDTH, SCREENHEIGHT);
+#else
 	// Set renderer scale
 	if (multiply > 1)
 	{
 		SDL_RenderSetScale(sdl_renderer, (float)multiply, (float)multiply);
 	}
+#endif
 
 	// Create texture for framebuffer
 	sdl_texture = SDL_CreateTexture(

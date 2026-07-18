@@ -1,0 +1,154 @@
+################################################################
+#
+# DOOM iOS Port Makefile (iOS Simulator, arm64)
+# Builds DOOM as an iOS .app bundle using a statically linked SDL2.
+#
+# Prerequisites (one-time, see doc/IOS_PORT.md):
+#   git submodule update --init ios/deps/SDL
+#   cd ios/deps
+#   cmake -S SDL -B build-sim -G Xcode -DCMAKE_SYSTEM_NAME=iOS \
+#         -DCMAKE_OSX_SYSROOT=iphonesimulator -DCMAKE_OSX_ARCHITECTURES=arm64 \
+#         -DCMAKE_OSX_DEPLOYMENT_TARGET=13.0 -DSDL_STATIC=ON -DSDL_SHARED=OFF -DSDL_TEST=OFF
+#   cmake --build build-sim --config Release --target SDL2-static -- -sdk iphonesimulator
+#   cmake --build build-sim --config Release --target SDL2main   -- -sdk iphonesimulator
+#
+# Usage:
+#   make -f Makefile.ios          Build ios/build/Doom.app
+#   make -f Makefile.ios install  Install + launch on booted simulator
+#   make -f Makefile.ios clean
+#
+################################################################
+
+SDK      = iphonesimulator
+SDKPATH  = $(shell xcrun --sdk $(SDK) --show-sdk-path)
+CC       = $(shell xcrun --sdk $(SDK) -f clang)
+ARCH     = arm64
+MINVER   = -mios-simulator-version-min=13.0
+
+SDLDIR   = ios/deps/build-sim
+SDLLIBS  = $(SDLDIR)/Release-iphonesimulator/libSDL2.a \
+           $(SDLDIR)/Release-iphonesimulator/libSDL2main.a
+
+CFLAGS  = -g -O2 -arch $(ARCH) -isysroot $(SDKPATH) $(MINVER)
+CFLAGS += -DNORMALUNIX -DMACOS -DIOS
+CFLAGS += -I$(SDLDIR)/include -I$(SDLDIR)/include/SDL2 -I$(SDLDIR)/include-config-release/SDL2
+
+# Build with `make -f Makefile.ios ASAN=1` for AddressSanitizer
+ifdef ASAN
+CFLAGS  += -fsanitize=address -fno-omit-frame-pointer
+endif
+
+LDFLAGS  = -arch $(ARCH) -isysroot $(SDKPATH) $(MINVER)
+ifdef ASAN
+LDFLAGS += -fsanitize=address
+endif
+LDFLAGS += $(SDLLIBS) -lm
+LDFLAGS += -framework AVFoundation -framework AudioToolbox -framework CoreAudio
+LDFLAGS += -framework CoreBluetooth -framework CoreGraphics -framework CoreHaptics
+LDFLAGS += -framework CoreMotion -framework CoreVideo -framework Foundation
+LDFLAGS += -framework GameController -framework Metal -framework MetalKit
+LDFLAGS += -framework OpenGLES -framework QuartzCore -framework UIKit
+
+# Output directory
+O = ios/build
+
+# Source directory
+S = linuxdoom-1.10
+
+OBJS = \
+	$(O)/doomdef.o \
+	$(O)/doomstat.o \
+	$(O)/dstrings.o \
+	$(O)/i_system.o \
+	$(O)/i_sound_sdl.o \
+	$(O)/i_video_sdl.o \
+	$(O)/tables.o \
+	$(O)/f_finale.o \
+	$(O)/f_wipe.o \
+	$(O)/d_main.o \
+	$(O)/d_net.o \
+	$(O)/d_items.o \
+	$(O)/g_game.o \
+	$(O)/m_menu.o \
+	$(O)/m_misc.o \
+	$(O)/m_argv.o \
+	$(O)/m_bbox.o \
+	$(O)/m_fixed.o \
+	$(O)/m_swap.o \
+	$(O)/m_cheat.o \
+	$(O)/m_random.o \
+	$(O)/am_map.o \
+	$(O)/p_ceilng.o \
+	$(O)/p_doors.o \
+	$(O)/p_enemy.o \
+	$(O)/p_floor.o \
+	$(O)/p_inter.o \
+	$(O)/p_lights.o \
+	$(O)/p_map.o \
+	$(O)/p_maputl.o \
+	$(O)/p_plats.o \
+	$(O)/p_pspr.o \
+	$(O)/p_setup.o \
+	$(O)/p_sight.o \
+	$(O)/p_spec.o \
+	$(O)/p_switch.o \
+	$(O)/p_mobj.o \
+	$(O)/p_telept.o \
+	$(O)/p_tick.o \
+	$(O)/p_saveg.o \
+	$(O)/p_user.o \
+	$(O)/r_bsp.o \
+	$(O)/r_data.o \
+	$(O)/r_draw.o \
+	$(O)/r_main.o \
+	$(O)/r_plane.o \
+	$(O)/r_segs.o \
+	$(O)/r_sky.o \
+	$(O)/r_things.o \
+	$(O)/w_wad.o \
+	$(O)/wi_stuff.o \
+	$(O)/v_video.o \
+	$(O)/st_lib.o \
+	$(O)/st_stuff.o \
+	$(O)/hu_stuff.o \
+	$(O)/hu_lib.o \
+	$(O)/s_sound.o \
+	$(O)/z_zone.o \
+	$(O)/info.o \
+	$(O)/sounds.o
+
+APP = $(O)/Doom.app
+
+all: $(APP)
+
+$(O):
+	mkdir -p $(O)
+
+# iOS entry point (SDL_main)
+$(O)/i_main_ios.o: ios/i_main_ios.c | $(O)
+	$(CC) $(CFLAGS) -I$(S) -c $< -o $@
+
+$(O)/%.o: $(S)/%.c | $(O)
+	$(CC) $(CFLAGS) -I$(S) -c $< -o $@
+
+$(O)/doom: $(OBJS) $(O)/i_main_ios.o
+	$(CC) $(LDFLAGS) $(OBJS) $(O)/i_main_ios.o -o $@
+
+# App bundle: binary + Info.plist + WAD, ad-hoc signed
+$(APP): $(O)/doom ios/Info.plist DOOM.WAD
+	mkdir -p $(APP)
+	cp $(O)/doom $(APP)/doom
+	cp ios/Info.plist $(APP)/Info.plist
+	cp DOOM.WAD $(APP)/doom.wad
+	codesign --force --sign - $(APP)
+	@echo "Built $(APP)"
+
+# Install and launch on the booted simulator
+install: $(APP)
+	xcrun simctl install booted $(APP)
+	xcrun simctl launch booted org.example.doom
+
+clean:
+	rm -rf $(O)
+
+.PHONY: all install clean

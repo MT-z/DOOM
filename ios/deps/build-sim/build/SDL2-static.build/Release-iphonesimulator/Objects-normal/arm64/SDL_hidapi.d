@@ -1,0 +1,22 @@
+dependencies: \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/SDL2-2.32.8/src/hidapi/SDL_hidapi.c \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/SDL2-2.32.8/src/hidapi/../SDL_internal.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/SDL2-2.32.8/src/hidapi/../dynapi/SDL_dynapi.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include-config-release/SDL2/SDL_config.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_platform.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/begin_code.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/close_code.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_assert.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_stdinc.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_log.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_hidapi.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/SDL2-2.32.8/src/hidapi/SDL_hidapi_c.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_loadso.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_error.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_thread.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_atomic.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_mutex.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_timer.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/SDL2-2.32.8/src/hidapi/../core/linux/SDL_udev.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/SDL2-2.32.8/src/hidapi/../core/linux/../../SDL_internal.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/SDL2-2.32.8/src/hidapi/hidapi/hidapi.h

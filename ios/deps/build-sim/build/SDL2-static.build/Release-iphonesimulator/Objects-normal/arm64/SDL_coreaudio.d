@@ -1,0 +1,31 @@
+dependencies: \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/SDL2-2.32.8/src/audio/coreaudio/SDL_coreaudio.m \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/SDL2-2.32.8/src/audio/coreaudio/../../SDL_internal.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/SDL2-2.32.8/src/audio/coreaudio/../../dynapi/SDL_dynapi.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include-config-release/SDL2/SDL_config.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_platform.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/begin_code.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/close_code.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_assert.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_stdinc.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_log.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_audio.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_error.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_endian.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_mutex.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_thread.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_atomic.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_rwops.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_hints.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/SDL2-2.32.8/src/audio/coreaudio/../SDL_audio_c.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/SDL2-2.32.8/src/audio/coreaudio/../SDL_sysaudio.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/SDL2-2.32.8/src/audio/coreaudio/../../SDL_dataqueue.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/SDL2-2.32.8/src/audio/coreaudio/.././SDL_audio_c.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/SDL2-2.32.8/src/audio/coreaudio/SDL_coreaudio.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/SDL2-2.32.8/src/audio/coreaudio/../../thread/SDL_systhread.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/SDL2-2.32.8/src/audio/coreaudio/../../thread/../SDL_internal.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/SDL2-2.32.8/src/audio/coreaudio/../../thread/SDL_thread_c.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/SDL2-2.32.8/src/audio/coreaudio/../../thread/pthread/SDL_systhread_c.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/SDL2-2.32.8/src/audio/coreaudio/../../thread/pthread/../../SDL_internal.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/SDL2-2.32.8/src/audio/coreaudio/../../thread/../SDL_error_c.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/SDL2-2.32.8/src/audio/coreaudio/../../thread/.././SDL_internal.h

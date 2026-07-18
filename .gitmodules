@@ -1,0 +1,3 @@
+[submodule "ios/deps/SDL"]
+	path = ios/deps/SDL
+	url = https://github.com/libsdl-org/SDL.git

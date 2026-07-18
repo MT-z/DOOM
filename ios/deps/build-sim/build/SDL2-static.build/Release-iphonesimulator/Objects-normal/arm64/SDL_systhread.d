@@ -1,0 +1,34 @@
+dependencies: \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/SDL2-2.32.8/src/thread/pthread/SDL_systhread.c \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/SDL2-2.32.8/src/thread/pthread/../../SDL_internal.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/SDL2-2.32.8/src/thread/pthread/../../dynapi/SDL_dynapi.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include-config-release/SDL2/SDL_config.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_platform.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/begin_code.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/close_code.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_assert.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_stdinc.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_log.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_system.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_keyboard.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_error.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_keycode.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_scancode.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_video.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_pixels.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_endian.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_rect.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_rwops.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_surface.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_blendmode.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_render.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_hints.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_thread.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_atomic.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/build-sim/include/SDL2/SDL_mutex.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/SDL2-2.32.8/src/thread/pthread/../SDL_thread_c.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/SDL2-2.32.8/src/thread/pthread/../pthread/SDL_systhread_c.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/SDL2-2.32.8/src/thread/pthread/../pthread/../../SDL_internal.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/SDL2-2.32.8/src/thread/pthread/../../SDL_error_c.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/SDL2-2.32.8/src/thread/pthread/../.././SDL_internal.h \
+  /Users/matsumoto_takaya/Documents/GitHub/DOOM/ios/deps/SDL2-2.32.8/src/thread/pthread/../SDL_systhread.h
