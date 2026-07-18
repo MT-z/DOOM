@@ -3,11 +3,10 @@
 # DOOM iOS Port Makefile (iOS Simulator, arm64)
 # Builds DOOM as an iOS .app bundle using a statically linked SDL2.
 #
-# Prerequisites (one-time):
+# Prerequisites (one-time, see doc/IOS_PORT.md):
+#   git submodule update --init ios/deps/SDL
 #   cd ios/deps
-#   curl -sL -o SDL2.tar.gz https://github.com/libsdl-org/SDL/releases/download/release-2.32.8/SDL2-2.32.8.tar.gz
-#   tar xzf SDL2.tar.gz
-#   cmake -S SDL2-2.32.8 -B build-sim -G Xcode -DCMAKE_SYSTEM_NAME=iOS \
+#   cmake -S SDL -B build-sim -G Xcode -DCMAKE_SYSTEM_NAME=iOS \
 #         -DCMAKE_OSX_SYSROOT=iphonesimulator -DCMAKE_OSX_ARCHITECTURES=arm64 \
 #         -DCMAKE_OSX_DEPLOYMENT_TARGET=13.0 -DSDL_STATIC=ON -DSDL_SHARED=OFF -DSDL_TEST=OFF
 #   cmake --build build-sim --config Release --target SDL2-static -- -sdk iphonesimulator

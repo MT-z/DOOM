@@ -7,6 +7,17 @@ linux/
 *.so
 *.dylib
 
+# iOS build artifacts
+ios/build/
+ios/deps/build-sim/
+ios/deps/SDL2-*/
+*.app/
+
+# Xcode
+DerivedData/
+xcuserdata/
+*.xcuserstate
+
 # Editor temporary files
 *~
 *.swp
