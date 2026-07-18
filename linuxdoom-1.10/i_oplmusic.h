@@ -11,10 +11,21 @@
 #ifndef __I_OPLMUSIC_H__
 #define __I_OPLMUSIC_H__
 
+#include <stdint.h>
+
 // Initialize the OPL music system. Requires the GENMIDI lump
 // (checked via the WAD) and an SDL audio device.
 // Returns 1 on success, 0 on failure.
 int OPL_Init(void);
+
+// Initialize without opening an audio device; the caller must
+// pump samples via OPL_Mix. For platforms where SDL supports
+// only one open audio device (e.g. iOS).
+int OPL_InitExternal(int samplerate);
+
+// External mixing mode only: render nframes of music and add
+// them into an interleaved stereo int16 buffer.
+void OPL_Mix(int16_t* stream, int nframes);
 
 void OPL_Shutdown(void);
 

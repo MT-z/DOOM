@@ -78,6 +78,7 @@ typedef struct
 // Chip and device
 static opl3_chip		chip;
 static SDL_AudioDeviceID	opl_device = 0;
+static int			opl_active = 0;	// initialized (own device or external mixing)
 
 // GENMIDI instrument data (record area, past the 8-byte header)
 static const unsigned char*	genmidi = NULL;
@@ -467,11 +468,8 @@ endsong:
 // SDL audio callback: sequence and render
 //
 
-static void OPL_AudioCallback(void* userdata, Uint8* stream, int len)
+static void RenderStream(int16_t* out, int nframes)
 {
-	int16_t* out = (int16_t*)stream;
-	int nframes = len / (2 * sizeof(int16_t));
-
 	while (nframes > 0)
 	{
 		int chunk = nframes;
@@ -516,17 +514,67 @@ static void OPL_AudioCallback(void* userdata, Uint8* stream, int len)
 	}
 }
 
+static void OPL_AudioCallback(void* userdata, Uint8* stream, int len)
+{
+	RenderStream((int16_t*)stream, len / (2 * sizeof(int16_t)));
+}
+
+// Lock the audio callback out of the shared state. In external
+// mixing mode there is no own device (everything runs on the
+// game thread), so locking is unnecessary.
+static void LockState(void)
+{
+	if (opl_device)
+		SDL_LockAudioDevice(opl_device);
+}
+
+static void UnlockState(void)
+{
+	if (opl_device)
+		SDL_UnlockAudioDevice(opl_device);
+}
+
+//
+// External mixing mode: render music and add it into an existing
+// interleaved stereo int16 buffer (used on platforms where SDL
+// allows only one open audio device, e.g. iOS).
+//
+
+void OPL_Mix(int16_t* stream, int nframes)
+{
+	int16_t scratch[2 * 256];
+
+	if (!opl_active || opl_device)
+		return;
+
+	while (nframes > 0)
+	{
+		int chunk = nframes > 256 ? 256 : nframes;
+		int i;
+
+		RenderStream(scratch, chunk);
+		for (i = 0; i < chunk * 2; i++)
+		{
+			int s = stream[i] + scratch[i];
+			if (s > 0x7fff) s = 0x7fff;
+			else if (s < -0x8000) s = -0x8000;
+			stream[i] = (int16_t)s;
+		}
+		stream += chunk * 2;
+		nframes -= chunk;
+	}
+}
+
 //
 // Public interface (game-thread context)
 //
 
-int OPL_Init(void)
+// Load the GENMIDI lump (the FM instrument set) from the IWAD
+static int LoadGenmidi(void)
 {
-	SDL_AudioSpec desired, obtained;
 	int lumpnum;
 	const unsigned char* lump;
 
-	// GENMIDI lump carries the FM instrument set
 	lumpnum = W_CheckNumForName("GENMIDI");
 	if (lumpnum < 0)
 	{
@@ -542,6 +590,30 @@ int OPL_Init(void)
 		return 0;
 	}
 	genmidi = lump + 8;
+	return 1;
+}
+
+// Reset the emulated chip for the given output sample rate.
+// OPL2 mode: leave the OPL3 NEW bit clear, enable waveform
+// select, no rhythm mode, all keys off.
+static void InitChip(int samplerate)
+{
+	OPL3_Reset(&chip, (uint32_t)samplerate);
+	samples_per_tick = (double)samplerate / MUS_TICKS_PER_SEC;
+
+	WriteReg(0x01, 0x20);
+	WriteReg(0xBD, 0x00);
+	AllVoicesOff();
+	memset(voices, 0, sizeof(voices));
+	ResetPlaybackState();
+}
+
+int OPL_Init(void)
+{
+	SDL_AudioSpec desired, obtained;
+
+	if (!LoadGenmidi())
+		return 0;
 
 	if (SDL_InitSubSystem(SDL_INIT_AUDIO) < 0)
 		return 0;
@@ -560,18 +632,20 @@ int OPL_Init(void)
 		return 0;
 	}
 
-	OPL3_Reset(&chip, (uint32_t)obtained.freq);
-	samples_per_tick = (double)obtained.freq / MUS_TICKS_PER_SEC;
-
-	// OPL2 mode: leave the OPL3 NEW bit clear, enable waveform
-	// select, no rhythm mode, all keys off.
-	WriteReg(0x01, 0x20);
-	WriteReg(0xBD, 0x00);
-	AllVoicesOff();
-	memset(voices, 0, sizeof(voices));
-	ResetPlaybackState();
+	InitChip(obtained.freq);
+	opl_active = 1;
 
 	SDL_PauseAudioDevice(opl_device, 0);
+	return 1;
+}
+
+int OPL_InitExternal(int samplerate)
+{
+	if (!LoadGenmidi())
+		return 0;
+
+	InitChip(samplerate);
+	opl_active = 1;
 	return 1;
 }
 
@@ -582,6 +656,7 @@ void OPL_Shutdown(void)
 		SDL_CloseAudioDevice(opl_device);
 		opl_device = 0;
 	}
+	opl_active = 0;
 }
 
 int OPL_RegisterSong(const void* data)
@@ -589,79 +664,79 @@ int OPL_RegisterSong(const void* data)
 	const unsigned char* mus = (const unsigned char*)data;
 	int scorelen, scorestart;
 
-	if (!opl_device || !mus || memcmp(mus, "MUS\x1a", 4) != 0)
+	if (!opl_active || !mus || memcmp(mus, "MUS\x1a", 4) != 0)
 		return 0;
 
 	scorelen = mus[4] | (mus[5] << 8);
 	scorestart = mus[6] | (mus[7] << 8);
 
-	SDL_LockAudioDevice(opl_device);
+	LockState();
 	music_playing = 0;
 	AllVoicesOff();
 	mus_song = mus;
 	mus_start = mus + scorestart;
 	mus_end = mus_start + scorelen;
 	ResetPlaybackState();
-	SDL_UnlockAudioDevice(opl_device);
+	UnlockState();
 
 	return 1;
 }
 
 void OPL_UnRegisterSong(void)
 {
-	if (!opl_device)
+	if (!opl_active)
 		return;
 
-	SDL_LockAudioDevice(opl_device);
+	LockState();
 	music_playing = 0;
 	AllVoicesOff();
 	mus_song = mus_start = mus_end = mus_pos = NULL;
-	SDL_UnlockAudioDevice(opl_device);
+	UnlockState();
 }
 
 void OPL_PlaySong(int looping)
 {
-	if (!opl_device || !mus_song)
+	if (!opl_active || !mus_song)
 		return;
 
-	SDL_LockAudioDevice(opl_device);
+	LockState();
 	ResetPlaybackState();
 	music_looping = looping;
 	music_paused = 0;
 	music_playing = 1;
-	SDL_UnlockAudioDevice(opl_device);
+	UnlockState();
 }
 
 void OPL_StopSong(void)
 {
-	if (!opl_device)
+	if (!opl_active)
 		return;
 
-	SDL_LockAudioDevice(opl_device);
+	LockState();
 	music_playing = 0;
 	AllVoicesOff();
-	SDL_UnlockAudioDevice(opl_device);
+	UnlockState();
 }
 
 void OPL_PauseSong(void)
 {
-	if (!opl_device)
+	if (!opl_active)
 		return;
 
-	SDL_LockAudioDevice(opl_device);
+	LockState();
 	music_paused = 1;
 	AllVoicesOff();
-	SDL_UnlockAudioDevice(opl_device);
+	UnlockState();
 }
 
 void OPL_ResumeSong(void)
 {
-	if (!opl_device)
+	if (!opl_active)
 		return;
 
-	SDL_LockAudioDevice(opl_device);
+	LockState();
 	music_paused = 0;
-	SDL_UnlockAudioDevice(opl_device);
+	UnlockState();
 }
 
 void OPL_SetMusicVolume(int volume)
@@ -671,18 +746,18 @@ void OPL_SetMusicVolume(int volume)
 	if (volume < 0) volume = 0;
 	if (volume > 15) volume = 15;
 
-	if (!opl_device)
+	if (!opl_active)
 	{
 		master_vol = volume;
 		return;
 	}
 
-	SDL_LockAudioDevice(opl_device);
+	LockState();
 	master_vol = volume;
 	for (i = 0; i < OPL_NUM_VOICES; i++)
 	{
 		if (voices[i].active)
 			VoiceUpdateVolume(i);
 	}
-	SDL_UnlockAudioDevice(opl_device);
+	UnlockState();
 }

@@ -61,6 +61,9 @@ static unsigned char* music_mididata = NULL;
 #ifdef USE_OPL_MUSIC
 // Nonzero when the OPL2 FM synthesis backend is active
 static int opl_music = 0;
+// Nonzero when OPL output is mixed into the SFX stream instead
+// of playing on its own audio device (single-device platforms)
+static int opl_external = 0;
 #endif
 
 // Configuration
@@ -202,12 +205,25 @@ void I_InitSound(void)
 #ifdef USE_OPL_MUSIC
 	// OPL2 FM synthesis (Sound Blaster / AdLib style) is the
 	// default music backend; pass -gmmusic for General MIDI.
-	if (!M_CheckParm("-gmmusic") && OPL_Init())
+	if (!M_CheckParm("-gmmusic"))
 	{
-		opl_music = 1;
-		OPL_SetMusicVolume(snd_MusicVolume);
-		printf("Music initialized (OPL2 FM synthesis)\n");
-		return;
+		if (OPL_Init())
+		{
+			opl_music = 1;
+			OPL_SetMusicVolume(snd_MusicVolume);
+			printf("Music initialized (OPL2 FM synthesis)\n");
+			return;
+		}
+		// Some platforms (iOS) allow only one open audio device;
+		// fall back to mixing the music into the SFX stream.
+		if (OPL_InitExternal(obtained_spec.freq))
+		{
+			opl_music = 1;
+			opl_external = 1;
+			OPL_SetMusicVolume(snd_MusicVolume);
+			printf("Music initialized (OPL2 FM synthesis, mixed with SFX)\n");
+			return;
+		}
 	}
 #endif
 
@@ -469,6 +485,12 @@ void I_UpdateSound(void)
 	if (audio_device == 0)
 		return;
 
+	// Keep a couple of buffers queued to avoid gaps without
+	// building up latency. Check before mixing so no rendered
+	// audio (in particular music) is ever dropped.
+	if (SDL_GetQueuedAudioSize(audio_device) >= SAMPLECOUNT * 2 * sizeof(signed short) * 2)
+		return;
+
 	// Clear the mixing buffer
 	memset(mixbuffer, 0, MIXBUFFERSIZE * sizeof(signed short));
 
@@ -518,12 +540,13 @@ void I_UpdateSound(void)
 		}
 	}
 
-	// Queue the mixed audio; keep a couple of buffers queued
-	// to avoid gaps without building up latency
-	if (SDL_GetQueuedAudioSize(audio_device) < SAMPLECOUNT * 2 * sizeof(signed short) * 2)
-	{
-		SDL_QueueAudio(audio_device, mixbuffer, SAMPLECOUNT * 2 * sizeof(signed short));
-	}
+#ifdef USE_OPL_MUSIC
+	// Mix music into the SFX stream on single-device platforms
+	if (opl_external)
+		OPL_Mix(mixbuffer, SAMPLECOUNT);
+#endif
+
+	SDL_QueueAudio(audio_device, mixbuffer, SAMPLECOUNT * 2 * sizeof(signed short));
 }
 
 //

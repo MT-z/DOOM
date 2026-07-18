@@ -136,7 +136,7 @@ ls ios/deps/build-sim/Release-iphonesimulator/
 
 - Simulator only — building for a physical device requires the `iphoneos` SDK, a real signing identity, and touch controls.
 - Touch input is not implemented; use a keyboard or a game controller paired with the simulator/host.
-- Music is not implemented (stubs only), same as the macOS port.
+- Music plays via OPL2 FM synthesis (Sound Blaster style), mixed into the SFX stream at 11025 Hz — iOS SDL allows only one open audio device. The General MIDI backend (`-gmmusic`) is macOS-only.
 
 ## References
 
